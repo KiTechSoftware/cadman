@@ -6,6 +6,7 @@ edit_uri: edit/main/docs/pages/
 
 theme:
   name: material
+  favicon: images/favicon.ico
   features:
     - navigation.tabs
     - navigation.sections
@@ -33,7 +34,6 @@ markdown_extensions:
 plugins:
   - search
 
-# Tell MkDocs where the content actually lives
 docs_dir: pages
 
 extra:
