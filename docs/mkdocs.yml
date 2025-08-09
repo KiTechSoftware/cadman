@@ -1,0 +1,41 @@
+site_name: Cadman
+site_url: https://cadman.kitechsoftware.com/
+repo_url: https://github.com/kitechsoftware/cadman
+repo_name: kitechsoftware/cadman
+edit_uri: edit/main/docs/pages/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.integrate
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+    - search.share
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabs
+
+plugins:
+  - search
+
+# Tell MkDocs where the content actually lives
+docs_dir: pages
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kitechsoftware/cadman
