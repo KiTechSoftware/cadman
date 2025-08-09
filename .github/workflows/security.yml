@@ -1,0 +1,64 @@
+name: Security
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      GITLEAKS_LICENSE:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Audit
+        uses: KiTechSoftware/gcr-rust/.github/actions/audit-deps@main
+        with:
+          no-fail: false
+
+  unsafe-scan:
+    name: Unsafe Code Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Unsafe Code Scan
+        uses: KiTechSoftware/gcr-rust/.github/actions/unsafe-scan@main
+        with:
+          no-fail: true
+
+  semgrep:
+    name: Semgrep SAST Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep ci
+
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure full git history
+        run: git fetch --unshallow || true
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
