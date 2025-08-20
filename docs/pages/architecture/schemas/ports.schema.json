@@ -1,0 +1,68 @@
+{
+  "$id": "https://schemas.cadman.dev/ports.v1.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cadman Port Allocator Report (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ranges", "free_ports", "reserved", "conflicts"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "ranges": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[1-9]\\d{0,4}-[1-9]\\d{0,4}$"
+      }
+    },
+    "free_ports": {
+      "type": "array",
+      "items": { "$ref": "app-info.v1.json#/$defs/port" },
+      "uniqueItems": true
+    },
+    "reserved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["port", "app_id", "name"],
+        "properties": {
+          "port": { "$ref": "app-info.v1.json#/$defs/port" },
+          "app_id": { "$ref": "app-info.v1.json#/$defs/ulid" },
+          "name": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "description": "Ports claimed by more than one holder and/or observed bound by the OS contrary to registry.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["port", "holders"],
+        "properties": {
+          "port": { "$ref": "app-info.v1.json#/$defs/port" },
+          "holders": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["registry", "runtime"]
+                },
+                "app_id": { "$ref": "app-info.v1.json#/$defs/ulid" },
+                "name": { "type": "string" },
+                "pid": { "type": "integer", "minimum": 1 },
+                "process": { "type": "string" },
+                "addr": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

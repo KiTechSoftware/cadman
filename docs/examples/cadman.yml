@@ -1,0 +1,66 @@
+name: cadman-example
+description: A Cadman project
+
+containers:
+  default:
+    name: blog-container
+    restart: always
+    detached: true
+    use_compose: false
+    image: ghcr.io/kitechsoftware/wordpress:latest
+    env_file:
+      - .env
+    environment:
+      - UID=$(id -u)
+      - GID=$(id -g)
+      - WORDPRESS_DB_HOST=${DB_HOST}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_TABLE_PREFIX=${DB_PREFIX}
+      - WORDPRESS_AUTH_KEY=${AUTH_KEY}
+      - WORDPRESS_SECURE_AUTH_KEY=${SECURE_AUTH_KEY}
+      - WORDPRESS_LOGGED_IN_KEY=${LOGGED_IN_KEY}
+      - WORDPRESS_NONCE_KEY=${NONCE_KEY}
+      - WORDPRESS_AUTH_SALT=${AUTH_SALT}
+      - WORDPRESS_SECURE_AUTH_SALT=${SECURE_AUTH_SALT}
+      - WORDPRESS_LOGGED_IN_SALT=${LOGGED_IN_SALT}
+      - WORDPRESS_NONCE_SALT=${NONCE_SALT}
+    ports:
+      - "127.0.0.1:${BLOG_PORT:-1081}:80"
+    volume:
+      - $(pwd)/public:/app/public:Z
+
+  api:
+    name: api-container
+    working_directory: /opt/apps/api
+    detached: true
+    use_compose: true
+    compose_file: podman-compose.yaml
+    env_file:
+      - .api.env
+    restart: always
+    user: cadman
+    group: cadman
+    ports:
+      - "127.0.0.1:${API_PORT:-1080}:80"
+    exec_start: up.sh
+    exec_stop: down.sh
+    after:
+      - network.target
+    requires:
+      - network.target
+
+caddy:
+  email: example@example.com
+  tls: auto
+  routes:
+    - host: 
+        - blog.local
+        - www.blog.local
+      log: stdout
+      proxy: 127.0.0.1:${BLOG_PORT:-1081}
+    - host: api.blog.local
+      tls: internal
+      email: api@example.com
+      proxy: 127.0.0.1:${API_PORT:-1080}

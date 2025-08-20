@@ -6,11 +6,12 @@ edit_uri: edit/main/docs/pages/
 
 theme:
   name: material
-  favicon: images/favicon.ico
+  favicon: favicon.ico
   features:
     - navigation.tabs
     - navigation.sections
     - navigation.top
+    - navigation.indexes
     - toc.integrate
     - content.code.copy
     - search.suggest
@@ -20,9 +21,62 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Commands:
+      - commands/index.md
+      - Self-management:
+          - install: commands/install.md
+          - update: commands/update.md
+          - uninstall: commands/uninstall.md
+          - doctor: commands/doctor.md
+          - configure: commands/configure.md
+          - info: commands/info.md
+          - logs: commands/logs.md
+          - ports: commands/ports.md
+      - Daemon:
+          - commands/daemon/index.md
+          - start: commands/daemon/start.md
+          - stop: commands/daemon/stop.md
+          - reload: commands/daemon/reload.md
+          - status: commands/daemon/status.md
+      - Project:
+          - init: commands/init.md
+          - up: commands/up.md
+          - down: commands/down.md
+          - purge: commands/purge.md
+      - App:
+          - commands/app/index.md
+          - add: commands/app/add.md
+          - remove: commands/app/remove.md
+          - list (ls): commands/app/list.md
+          - info: commands/app/info.md
+          - status: commands/app/status.md
+          - ports: commands/app/ports.md
+          - logs: commands/app/logs.md
+      - Wrappers:
+          - pod: commands/wrappers/pod.md
+          - compose: commands/wrappers/compose.md
+          - caddy: commands/wrappers/caddy.md
+  - Architecture:
+      - architecture/index.md
+      - Executive Summary: architecture/executive-summary.md
+      - System Context: architecture/system-context.md
+      - High-level Architecture: architecture/high-level-architecture.md
+      - Component Design: architecture/component-design.md
+      - Data Architecture: architecture/data-architecture.md
+      - Deployment: architecture/deployment.md
+      - Security: architecture/security.md
+      - Specs:
+          - SRS: architecture/srs.md
+          - RTM: architecture/rtm.md
+      - ADRs:
+          - architecture/adr/index.md
+
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - def_list
+  - md_in_html
   - toc:
       permalink: true
   - pymdownx.highlight
@@ -30,9 +84,17 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.snippets
+  - pymdownx.inlinehilite
+  - pymdownx.critic
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.keys
 
 plugins:
   - search
+  - git-revision-date-localized:
+      fallback_to_build_date: true
 
 docs_dir: pages
 

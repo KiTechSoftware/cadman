@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      binary_tag:
+        description: 'Base name for output binaries and packages'
+        required: false
+        default: 'cadman'
+        type: string
+jobs:
+  build:
+    name: Build CLI
+    uses: ./.github/workflows/build.yml
+    with:
+      binary_tag: ${{ github.event.release.tag_name || inputs.binary_tag }}
+      build_linux_x86_64: true
+      build_linux_aarch64: true
+      build_macos_x86_64: true
+      build_macos_aarch64: true
+      package_deb: false
+      package_rpm: false
+      package_homebrew: false
+
+  upload:
+    name: Upload to GitHub Release
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set binary_tag
+        id: vars
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.binary_tag }}
+        run: |
+          TAG="${RELEASE_TAG:-$INPUT_TAG}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: List downloaded files
+        run: ls -R artifacts/
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.release.tag_name || github.ref_name  }}
+          files: |
+            artifacts/**/*${{ steps.vars.outputs.tag }}*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Cadman Service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/cadman daemon start
+Restart=on-failure
+User=root
+Group=cadman
+
+[Install]
+WantedBy=multi-user.target

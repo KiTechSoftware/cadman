@@ -1,0 +1,5 @@
+# fedora/mac
+#%wheel ALL=(ALL) NOPASSWD: /usr/local/bin
+# ubuntu/debian
+#%sudo ALL=(ALL) NOPASSWD: /usr/local/bin
+%cadman ALL=(ALL) NOPASSWD: /usr/local/bin

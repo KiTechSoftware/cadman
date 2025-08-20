@@ -1,0 +1,51 @@
+[global]
+debug = false # debug mode
+verbose = false # verbose mode
+quiet = false # quiet mode
+reload = true # reload on config change
+output = "json" # default output format
+
+
+[mode]
+user = "cadman" # the run mode - options: cadman, user, root
+system = true # false = unprivileged, uses ~/.cadman
+
+[projects]
+reload = true # reload on project creation or deletion
+paths = ["/var/apps", "/opt/apps", "/mnt/apps"] # Paths for autodiscovery - to search for existing and new projects
+
+[ports]
+ranges = ["3000-3999","5000-5999"] # Port ranges to allocate
+prefer_localhost = true # Prefer localhost binds by default
+auto_allocate = true # Automatically allocate ports if not specified in cadman.yaml
+
+[logs]
+level = "info" # log level
+size = 100 # in MB
+output = "file" # log output - options: file, stdout, stderr, stacked
+
+[preference]
+auto = true # global container & compose override
+
+[preference.container]
+podman = true # use Containerfile
+docker = true # use Dockerfile
+
+[preference.compose]
+podman_compose = true # use podman-compose.yml/yaml
+docker_compose = true # use docker-compose.yml/yaml
+
+[service.caddy]
+installed = true # is the service is installed
+managed = true # is managed by cadman
+user = false # is installed in user space (without sudo)
+
+[service.podman]
+installed = true # is installed
+managed = true # is managed by cadman
+user = true # is installed in user space (without sudo)
+
+[service.podman_compose]
+installed = true # is installed
+managed = true # is managed by cadman
+user = true # is installed in user space (without sudo)
