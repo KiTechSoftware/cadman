@@ -1,0 +1,30 @@
+whoami.podman.localhost {
+  @api path /v1*          # created only if path_prefix set
+  handle @api {
+    rewrite * {path}/     # if you need trailing slash fixes, optional
+    uri strip_prefix /v1  # when strip_prefix present
+    reverse_proxy whoami:80
+  }
+
+  # no path_prefix? fall back to root handler
+  @root not path /v1*
+  handle @root {
+    reverse_proxy whoami:80
+  }
+
+  # optional basic auth
+  # basicauth {
+  #   user <bcrypt|scrypt hash here>
+  # }
+
+  # optional headers
+  header {
+    X-Frame-Options "DENY"
+  }
+
+  # TLS: default auto-HTTPS if public DNS works.
+  # If you require a specific automation policy name, you can emit:
+  # tls {
+  #   on_demand   # or cert/key if you go manual
+  # }
+}

@@ -1,0 +1,7 @@
+{
+  admin 127.0.0.1:2019
+  # optional: debug
+  # debug
+}
+
+import /etc/cadman/caddy/sites/*.site

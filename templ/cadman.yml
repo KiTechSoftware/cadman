@@ -1,0 +1,195 @@
+################################################################
+#
+# Configuration sample for Cadman v0.
+#
+################################################################
+
+################################################################
+# Global configuration
+################################################################
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: true
+  reconcile:
+    debounce_ms: 700
+    full_resync_sec: 90
+  state:
+    path: "/var/lib/cadman/last_applied.json"
+  tls:
+    policies: ["default", "wildcard-dns"]
+
+################################################################
+# EntryPoints configuration
+################################################################
+
+# EntryPoints definition
+#
+# Optional
+#
+entryPoints:
+  web:
+    address: :80
+
+  websecure:
+    address: :443
+    tls:
+      cert: /path/to/cert.crt
+      key: /path/to/cert.key
+      
+
+################################################################
+# Cadman logs configuration
+################################################################
+
+# Cadman logs
+# Enabled by default and log to stdout
+#
+# Optional
+#
+log:
+  # Log level
+  #
+  # Optional
+  # Default: "ERROR"
+  #
+  level: DEBUG
+
+  # Sets the filepath for the cadman log. If not specified, stdout will be used.
+  # Intermediate directories are created if necessary.
+  #
+  # Optional
+  # Default: os.Stdout
+  #
+  filePath: log/cadman.log
+
+  # Format is either "json" or "common".
+  #
+  # Optional
+  # Default: "common"
+  #
+  format: json
+
+################################################################
+# Access logs configuration
+################################################################
+
+# Enable access logs
+# By default it will write to stdout and produce logs in the textual
+# Common Log Format (CLF), extended with additional fields.
+#
+# Optional
+#
+accessLog:
+  # Sets the file path for the access log. If not specified, stdout will be used.
+  # Intermediate directories are created if necessary.
+  #
+  # Optional
+  # Default: os.Stdout
+  #
+  filePath: /path/to/log/log.txt
+
+  # Format is either "json" or "common".
+  #
+  # Optional
+  # Default: "common"
+  #
+  format: json
+
+################################################################
+# API and dashboard configuration
+################################################################
+
+# Enable API and dashboard
+#
+# Optional
+#
+api:
+  # Enable the API in insecure mode
+  #
+  # Optional
+  # Default: false
+  #
+  insecure: true
+  # Enabled Dashboard
+  #
+  # Optional
+  # Default: true
+  #
+  dashboard: false
+  # Dashboard and API Host Domain
+  #
+  # Optional
+  # Default: "cadman.localhost"
+  #
+  host: "proxy.localhost"
+
+
+################################################################
+# Ping configuration
+################################################################
+
+# Enable ping
+ping:
+  # Name of the related entry point
+  #
+  # Optional
+  # Default: "cadman"
+  #
+  entryPoint: cadman
+
+################################################################
+# Podman configuration backend
+################################################################
+
+#providers:
+  # Enable Podman configuration backend
+  podman:
+    # Podman server endpoint. Can be a tcp or a unix socket endpoint.
+    #
+    # Required
+    # Default: "unix:///var/run/podman.sock"
+    # Accepts: "tcp://10.10.10.10:2375"
+    #
+    sources:
+      rootful:
+        enabled: true
+        endpoint: "unix:///run/podman/podman.sock"
+        priority: 100
+      rootless:
+        - enabled: true
+          endpoint: "unix:///run/user/1000/podman/podman.sock"
+          priority: 50
+          name: "uid1000"
+        - enabled: false
+          endpoint: "unix:///run/user/1001/podman/podman.sock"
+    # Default host rule.
+    #
+    # Optional
+    # Default: "Host(`{{ normalize .Name }}`)"
+    #
+    defaultRule: Host(`{{ normalize .Name }}.podman.localhost`)
+
+    # Expose containers by default in cadman
+    #
+    # Optional
+    # Default: true
+    #
+    exposedByDefault: false
+
+
+version: 1
+providers:
+  podman:
+    # default_endpoint: "unix:///run/podman/podman.sock"
+    sources:
+      rootful:
+        enabled: true
+        endpoint: "unix:///run/podman/podman.sock"
+        priority: 100
+      rootless:
+        - enabled: true
+          endpoint: "unix:///run/user/1000/podman/podman.sock"
+          priority: 50
+          name: "uid1000"
+        - enabled: false
+          endpoint: "unix:///run/user/1001/podman/podman.sock"
