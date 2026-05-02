@@ -1,0 +1,397 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      binary_tag:
+        description: 'Base name for output binaries and packages'
+        default: 'cadman'
+        type: string
+      build_linux_x86_64:
+        description: '✅ Build for Linux (x86_64) → target: x86_64-unknown-linux-gnu'
+        default: true
+        type: boolean
+      build_linux_aarch64:
+        description: '✅ Build for Linux (AArch64) → target: aarch64-unknown-linux-gnu'
+        default: true
+        type: boolean
+      build_macos_x86_64:
+        description: '✅ Build for macOS (x86_64) → target: x86_64-apple-darwin'
+        default: true
+        type: boolean
+      build_macos_aarch64:
+        description: '✅ Build for macOS (AArch64 / Apple Silicon) → target: aarch64-apple-darwin'
+        default: true
+        type: boolean
+      package_deb:
+        description: 'Package .deb'
+        default: true
+        type: boolean
+      package_rpm:
+        description: 'Package .rpm'
+        default: true
+        type: boolean
+      package_homebrew:
+        description: 'Package Homebrew tarballs'
+        default: true
+        type: boolean
+
+  workflow_dispatch:
+    inputs:
+      binary_tag:
+        description: 'Base name for output binaries and packages'
+        default: 'cadman'
+        type: string
+      build_linux_x86_64:
+        description: '✅ Build for Linux (x86_64) → target: x86_64-unknown-linux-gnu'
+        default: true
+        type: boolean
+      build_linux_aarch64:
+        description: '✅ Build for Linux (AArch64) → target: aarch64-unknown-linux-gnu'
+        default: true
+        type: boolean
+      build_macos_x86_64:
+        description: '✅ Build for macOS (x86_64) → target: x86_64-apple-darwin'
+        default: true
+        type: boolean
+      build_macos_aarch64:
+        description: '✅ Build for macOS (AArch64 / Apple Silicon) → target: aarch64-apple-darwin'
+        default: true
+        type: boolean
+      package_deb:
+        description: 'Package .deb'
+        default: true
+        type: boolean
+      package_rpm:
+        description: 'Package .rpm'
+        default: true
+        type: boolean
+      package_homebrew:
+        description: 'Package Homebrew tarballs'
+        default: true
+        type: boolean
+
+jobs:
+  summary:
+    name: Show Build Plan
+    runs-on: ubuntu-latest
+    steps:
+      - id: set
+        env:
+          BINARY_TAG: ${{ inputs.binary_tag }}
+          BUILD_LINUX_X86_64: ${{ inputs.build_linux_x86_64 }}
+          BUILD_LINUX_AARCH64: ${{ inputs.build_linux_aarch64 }}
+          BUILD_MACOS_X86_64: ${{ inputs.build_macos_x86_64 }}
+          BUILD_MACOS_AARCH64: ${{ inputs.build_macos_aarch64 }}
+          PACKAGE_DEB: ${{ inputs.package_deb }}
+          PACKAGE_RPM: ${{ inputs.package_rpm }}
+          PACKAGE_HOMEBREW: ${{ inputs.package_homebrew }}
+        run: |
+          echo "## 🚧 Build Plan" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Binary Tag**: \`$BINARY_TAG\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### 🎯 Enabled Targets" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$BUILD_LINUX_X86_64" = "true" ]; then
+            echo "- **linux-x86_64** (\`x86_64-unknown-linux-gnu\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "linux_x86_64=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "$BUILD_LINUX_AARCH64" = "true" ]; then
+            echo "- **linux-aarch64** (\`aarch64-unknown-linux-gnu\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "linux_aarch64=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "$BUILD_MACOS_X86_64" = "true" ]; then
+            echo "- **macos-x86_64** (\`x86_64-apple-darwin\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "macos_x86_64=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "$BUILD_MACOS_AARCH64" = "true" ]; then
+            echo "- **macos-aarch64** (\`aarch64-apple-darwin\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "macos_aarch64=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### 📦 Packaging Steps" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$PACKAGE_DEB" = "true" ]; then
+            echo "- ✅ .deb package" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- ❌ .deb package" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ "$PACKAGE_RPM" = "true" ]; then
+            echo "- ✅ .rpm package" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- ❌ .rpm package" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ "$PACKAGE_HOMEBREW" = "true" ]; then
+            echo "- ✅ Homebrew tarballs" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- ❌ Homebrew tarballs" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    name: Build base binaries
+    needs: summary
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            enabled: ${{ inputs.build_linux_x86_64 }}
+          - name: linux-aarch64
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            enabled: ${{ inputs.build_linux_aarch64 }}
+          - name: macos-x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            enabled: ${{ inputs.build_macos_x86_64 }}
+          - name: macos-aarch64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            enabled: ${{ inputs.build_macos_aarch64 }}
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Skip disabled build
+        if: ${{ !matrix.enabled }}
+        run: echo "Build for ${{ matrix.name }} is disabled. Skipping..."
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/checkout@v4
+
+      - if: ${{ matrix.enabled }}
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - if: ${{ matrix.enabled }}
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Install cross-linker (for aarch64 Linux)
+        if: matrix.enabled && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - if: ${{ matrix.enabled }}
+        name: Build release binary
+        env:
+          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - if: ${{ matrix.enabled }}
+        name: Rename binary
+        env:
+          BINARY_TAG: ${{ inputs.binary_tag }}
+        run: |
+          BIN_NAME=$(cargo read-manifest | jq -r .targets[] | jq 'select(.kind[] == "bin") | .name' | head -n1 | tr -d '"')
+          echo "Detected binary: $BIN_NAME"
+          cp target/${{ matrix.target }}/release/$BIN_NAME $BINARY_TAG-${{ matrix.name }}
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.binary_tag }}-${{ matrix.name }}
+          path: ${{ inputs.binary_tag }}-${{ matrix.name }}
+
+  package-deb:
+    name: Package .deb
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            name: linux-x86_64
+            enabled: ${{ inputs.build_linux_x86_64 && inputs.package_deb }}
+          - target: aarch64-unknown-linux-gnu
+            name: linux-aarch64
+            enabled: ${{ inputs.build_linux_aarch64 && inputs.package_deb }}
+    steps:
+      - name: Skip disabled build
+        if: ${{ !matrix.enabled }}
+        run: echo "Build for ${{ matrix.name }} is disabled. Skipping..."
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/checkout@v4
+
+      - if: ${{ matrix.enabled }}
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - if: ${{ matrix.enabled }}
+        run: cargo install cargo-deb
+
+      - if: matrix.enabled && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.binary_tag }}-${{ matrix.name }}
+          path: target/${{ matrix.target }}/release/
+
+      - if: ${{ matrix.enabled }}
+        env:
+          BINARY_TAG: ${{ inputs.binary_tag }}
+        run: |
+          cp target/${{ matrix.target }}/release/$BINARY_TAG-${{ matrix.name }} target/${{ matrix.target }}/release/$BINARY_TAG
+          cargo deb --no-build --target ${{ matrix.target }}
+          mv target/${{ matrix.target }}/debian/*.deb $BINARY_TAG-${{ matrix.name }}.deb
+
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.binary_tag }}-${{ matrix.name }}.deb
+          path: ${{ inputs.binary_tag }}-${{ matrix.name }}.deb
+
+  package-rpm:
+    name: Package .rpm
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            name: linux-x86_64
+            enabled: ${{ inputs.build_linux_x86_64 && inputs.package_rpm }}
+          - target: aarch64-unknown-linux-gnu
+            name: linux-aarch64
+            enabled: ${{ inputs.build_linux_aarch64 && inputs.package_rpm }}
+    steps:
+      - name: Skip disabled build
+        if: ${{ !matrix.enabled }}
+        run: echo "Build for ${{ matrix.name }}.rpm is disabled. Skipping..."
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/checkout@v4
+
+      - if: ${{ matrix.enabled }}
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - if: ${{ matrix.enabled }}
+        run: cargo install cargo-generate-rpm
+
+      - if: matrix.enabled && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.binary_tag }}-${{ matrix.name }}
+          path: target/${{ matrix.target }}/release/
+
+      - if: ${{ matrix.enabled }}
+        env:
+          BINARY_TAG: ${{ inputs.binary_tag }}
+        run: |
+          cp target/${{ matrix.target }}/release/$BINARY_TAG-${{ matrix.name }} target/${{ matrix.target }}/release/$BINARY_TAG
+          mkdir -p target/${{ matrix.target }}/rpm/
+          cargo generate-rpm --target ${{ matrix.target }} --output target/${{ matrix.target }}/rpm/
+          mv target/${{ matrix.target }}/rpm/*.rpm $BINARY_TAG-${{ matrix.name }}.rpm
+
+
+      - if: ${{ matrix.enabled }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.binary_tag }}-${{ matrix.name }}.rpm
+          path: ${{ inputs.binary_tag }}-${{ matrix.name }}.rpm
+
+  package-homebrew:
+    name: Prepare Homebrew tarballs
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Skip disabled build
+        if: ${{ !inputs.package_homebrew }}
+        run: echo "Build for Homebrew tarballs is disabled. Skipping..."
+
+      - if: ${{ inputs.package_homebrew }}
+        uses: actions/checkout@v4
+
+      - if: ${{ inputs.package_homebrew }}
+        uses: actions/download-artifact@v4
+        with:
+          path: macos-bin/
+
+      - if: ${{ inputs.package_homebrew }}
+        name: Prepare Homebrew packages
+        id: homebrew
+        env:
+          BINARY_TAG: ${{ inputs.binary_tag }}
+          BUILD_MACOS_X86_64: ${{ inputs.build_macos_x86_64 }}
+          BUILD_MACOS_AARCH64: ${{ inputs.build_macos_aarch64 }}
+        run: |
+          mkdir -p dist
+          built_any=false
+
+          echo "Checking for macOS builds..."
+
+          if [ "$BUILD_MACOS_X86_64" = "true" ]; then
+            file="macos-bin/$BINARY_TAG-macos-x86_64/$BINARY_TAG-macos-x86_64"
+            if ls $file 1>/dev/null 2>&1; then
+              cp "$file" "$BINARY_TAG"
+              tar -czvf "dist/$BINARY_TAG-macos-x86_64.tar.gz" "$BINARY_TAG"
+              built_any=true
+            fi
+          fi
+
+          if [ "$BUILD_MACOS_AARCH64" = "true" ]; then
+            file="macos-bin/$BINARY_TAG-macos-aarch64/$BINARY_TAG-macos-aarch64"
+            if ls $file 1>/dev/null 2>&1; then
+              cp "$file" "$BINARY_TAG"
+              tar -czvf "dist/$BINARY_TAG-macos-aarch64.tar.gz" "$BINARY_TAG"
+              built_any=true
+            fi
+          fi
+
+          if [ "$built_any" = false ]; then
+            echo "No macOS binaries built or found. Skipping Homebrew packaging."
+            exit 0
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.package_homebrew }} && success()
+        with:
+          name: homebrew-tarballs
+          path: dist/*.tar.gz
+
+
+  aggregate:
+    name: Aggregate Artifacts
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - package-deb
+      - package-rpm
+      - package-homebrew
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - env:
+          BINARY_TAG: ${{ inputs.binary_tag }}
+        run: |
+          mkdir -p upload
+          find artifacts -type f -name "${BINARY_TAG}*" -exec cp {} upload/ \;
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: upload/
