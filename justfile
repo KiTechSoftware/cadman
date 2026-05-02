@@ -1,28 +1,46 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
-default: 
+default:
     just --list
 
 build:
-    ./scripts/build.sh
+    ./scripts/cadman-build.sh
 
 run *args:
-    ./scripts/run.sh {{args}}
+    ./scripts/cadman-run.sh {{args}}
 
 test:
-    ./scripts/test.sh
+    ./scripts/cadman-test.sh
 
 test-coverage:
-    ./scripts/test-coverage.sh
+    ./scripts/cadman-test-coverage.sh
 
 lint:
-    ./scripts/lint.sh
+    ./scripts/cadman-lint.sh
 
 fmt:
-    ./scripts/fmt.sh
+    ./scripts/cadman-fmt.sh
 
 clean:
-    ./scripts/clean.sh
+    ./scripts/cadman-clean.sh
 
 check-license:
-    ./scripts/license.sh
+    ./scripts/cadman-license.sh
+
+image-run *args:
+    ./scripts/cadman-image-run.sh {{args}}
+
+docs-build:
+    ./scripts/docs-build.sh
+
+docs-serve:
+    ./scripts/docs-serve.sh
+
+ci-check:
+    ./scripts/ci-check.sh
+
+setup:
+    ./scripts/setup.sh
+
+crate-check:
+    ./scripts/crate-release-check.sh

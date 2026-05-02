@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      run: ./scripts/cadman-fmt.sh
+    lint:
+      run: ./scripts/cadman-lint.sh
+
+pre-push:
+  commands:
+    verify:
+      run: ./scripts/ci-check.sh

@@ -1,0 +1,58 @@
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - ./scripts/cadman-build.sh
+
+  run:
+    cmds:
+      - ./scripts/cadman-run.sh {{.CLI_ARGS}}
+
+  test:
+    cmds:
+      - ./scripts/cadman-test.sh
+
+  test-coverage:
+    cmds:
+      - ./scripts/cadman-test-coverage.sh
+
+  lint:
+    cmds:
+      - ./scripts/cadman-lint.sh
+
+  fmt:
+    cmds:
+      - ./scripts/cadman-fmt.sh
+
+  clean:
+    cmds:
+      - ./scripts/cadman-clean.sh
+
+  check-license:
+    cmds:
+      - ./scripts/cadman-license.sh
+
+  image-run:
+    cmds:
+      - ./scripts/cadman-image-run.sh {{.CLI_ARGS}}
+
+  docs-build:
+    cmds:
+      - ./scripts/docs-build.sh
+
+  docs-serve:
+    cmds:
+      - ./scripts/docs-serve.sh
+
+  ci-check:
+    cmds:
+      - ./scripts/ci-check.sh
+
+  setup:
+    cmds:
+      - ./scripts/setup.sh
+
+  crate-check:
+    cmds:
+      - ./scripts/crate-release-check.sh

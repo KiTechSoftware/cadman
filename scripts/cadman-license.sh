@@ -4,4 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 
-cargo clippy --manifest-path "${REPO_ROOT}/workspace/Cargo.toml" --workspace --all-features --all-targets -- -D warnings
+pushd "${REPO_ROOT}/workspace" > /dev/null
+cargo deny check --config deny.toml
+popd > /dev/null

@@ -4,4 +4,4 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 
-cargo clean --manifest-path "${REPO_ROOT}/workspace/Cargo.toml"
+cargo clippy --manifest-path "${REPO_ROOT}/workspace/Cargo.toml" --workspace --all-features --all-targets -- -D warnings

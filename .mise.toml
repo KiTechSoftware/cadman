@@ -1,0 +1,45 @@
+[tools]
+rust = "stable"
+lefthook = "latest"
+
+[tasks.build]
+run = "./scripts/cadman-build.sh"
+
+[tasks.run]
+run = "./scripts/cadman-run.sh"
+
+[tasks.lint]
+run = "./scripts/cadman-lint.sh"
+
+[tasks.fmt]
+run = "./scripts/cadman-fmt.sh"
+
+[tasks.clean]
+run = "./scripts/cadman-clean.sh"
+
+[tasks.check-license]
+run = "./scripts/cadman-license.sh"
+
+[tasks.test]
+run = "./scripts/cadman-test.sh"
+
+[tasks.test-coverage]
+run = "./scripts/cadman-test-coverage.sh"
+
+[tasks.image-run]
+run = "./scripts/cadman-image-run.sh"
+
+[tasks.docs-build]
+run = "./scripts/docs-build.sh"
+
+[tasks.docs-serve]
+run = "./scripts/docs-serve.sh"
+
+[tasks.ci-check]
+run = "./scripts/ci-check.sh"
+
+[tasks.setup]
+run = "./scripts/setup.sh"
+
+[tasks.crate-check]
+run = "./scripts/crate-release-check.sh"
