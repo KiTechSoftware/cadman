@@ -3,6 +3,8 @@ site_url: https://cadman.kitechsoftware.com/
 repo_url: https://github.com/kitechsoftware/cadman
 repo_name: kitechsoftware/cadman
 edit_uri: edit/main/docs/pages/
+docs_dir: pages
+favicon: favicon.ico
 
 theme:
   name: material
@@ -18,7 +20,7 @@ theme:
 
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
+  - Getting Started: guides/getting-started.md
 
 markdown_extensions:
   - admonition
@@ -32,9 +34,6 @@ markdown_extensions:
 
 plugins:
   - search
-
-# Tell MkDocs where the content actually lives
-docs_dir: pages
 
 extra:
   social:

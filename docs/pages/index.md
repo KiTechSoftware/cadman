@@ -4,5 +4,5 @@ Let your containers find their way with Cadman, a lightweight tool designed to s
 
 > Tip: use with caution, the `CLI` is still in development.
 
-- **Start here:** [Getting Started](getting-started.md)
+- **Start here:** [Getting Started](guides/getting-started.md)
  
