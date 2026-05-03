@@ -50,6 +50,7 @@ pub fn build_app_context(args: AppContextArgs) -> Result<Context> {
         .set_run_mode(RunMode::parse(&args.run_mode))
         .set_interactive_mode(imode)
         .set_cwd(args.cwd)
+        .set_config_path(args.config_path)
         .set_dry_run(args.dry_run)
         .options_mut()
         .set_auto_yes(args.auto_yes)

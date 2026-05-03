@@ -101,10 +101,7 @@ impl Default for LoggingConfig {
 
 /// Return the path to the global config file for this runtime.
 pub fn path(runtime: &Runtime) -> PathBuf {
-    runtime
-        .config_path()
-        .cloned()
-        .unwrap_or_else(|| runtime.default_config_path())
+    runtime.effective_config_path()
 }
 
 /// Build a `CadmanConfig` with defaults resolved relative to the runtime state dir.

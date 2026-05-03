@@ -1,21 +1,25 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::engine::constants::{
-    CACHE_DIR_NAME, CADMAN_USER_NAME, CONFIG_DIR_NAME, CONFIG_FILE_NAME,
-    DEFAULT_POLL_INTERVAL_SECS, STATE_DIR_NAME,
+    CADMAN_USER_NAME, CONFIG_FILE_NAME, DEFAULT_POLL_INTERVAL_SECS, REGISTRY_FILE_NAME,
+    STATE_FILE_NAME,
 };
+use crate::engine::{Result, constants::paths};
 use veltrix::os::unistd::{self, Gid, Uid};
 
 pub mod mode;
 pub mod options;
+pub mod scope;
 
 pub use mode::*;
 pub use options::*;
+pub use scope::*;
 
 #[derive(Debug, Clone)]
 pub struct Runtime {
     run_mode: RunMode,
     interactive_mode: InteractiveMode,
+    install_scope: InstallScope,
     options: RuntimeOptions,
     paths: RuntimePaths,
     poll_interval_secs: u64,
@@ -29,6 +33,7 @@ pub struct RuntimePaths {
     config_dir: PathBuf,
     cache_dir: PathBuf,
     state_dir: PathBuf,
+    log_dir: PathBuf,
 }
 
 #[derive(Debug, Clone)]
@@ -100,11 +105,16 @@ impl Default for Runtime {
 
 impl Runtime {
     pub fn new() -> Self {
+        let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("."));
+        let install_scope = detect_install_scope(&current_exe, None);
+
         Self {
             run_mode: RunMode::Current,
             interactive_mode: InteractiveMode::Interactive,
+            install_scope,
             options: RuntimeOptions::new(),
-            paths: RuntimePaths::new(),
+            paths: RuntimePaths::new_for_scope(install_scope)
+                .unwrap_or_else(|_| RuntimePaths::user_fallback()),
             poll_interval_secs: DEFAULT_POLL_INTERVAL_SECS,
             user_info: RuntimeUserInfo::new(),
         }
@@ -151,6 +161,10 @@ impl Runtime {
         self.interactive_mode
     }
 
+    pub fn install_scope(&self) -> InstallScope {
+        self.install_scope
+    }
+
     pub fn version(&self) -> &str {
         env!("CARGO_PKG_VERSION")
     }
@@ -183,8 +197,20 @@ impl Runtime {
         &self.paths.state_dir
     }
 
+    pub fn log_dir(&self) -> &PathBuf {
+        &self.paths.log_dir
+    }
+
     pub fn default_config_path(&self) -> PathBuf {
         self.paths.config_dir.join(CONFIG_FILE_NAME)
+    }
+
+    pub fn registry_path(&self) -> PathBuf {
+        self.paths.state_dir.join(REGISTRY_FILE_NAME)
+    }
+
+    pub fn state_path(&self) -> PathBuf {
+        self.paths.state_dir.join(STATE_FILE_NAME)
     }
 
     pub fn effective_config_path(&self) -> PathBuf {
@@ -217,6 +243,15 @@ impl Runtime {
 
     pub fn set_interactive_mode(&mut self, mode: InteractiveMode) -> &mut Self {
         self.interactive_mode = mode;
+        self
+    }
+
+    pub fn set_install_scope(&mut self, scope: InstallScope) -> &mut Self {
+        let config_path = self.paths.config_path.clone();
+        self.install_scope = scope;
+        self.paths =
+            RuntimePaths::new_for_scope(scope).unwrap_or_else(|_| RuntimePaths::user_fallback());
+        self.paths.config_path = config_path;
         self
     }
 
@@ -261,7 +296,20 @@ impl Runtime {
     }
 
     pub fn set_config_path(&mut self, path: Option<PathBuf>) -> &mut Self {
-        self.paths.config_path = path;
+        let explicit_path = path.clone();
+        let scope = if path
+            .as_deref()
+            .is_some_and(|path| path.starts_with("/etc/cadman"))
+        {
+            InstallScope::System
+        } else {
+            self.install_scope
+        };
+
+        if scope != self.install_scope {
+            self.set_install_scope(scope);
+        }
+        self.paths.config_path = explicit_path;
         self
     }
 
@@ -279,21 +327,69 @@ impl Default for RuntimePaths {
 
 impl RuntimePaths {
     pub fn new() -> Self {
+        Self::new_for_scope(InstallScope::User).unwrap_or_else(|_| Self::user_fallback())
+    }
+    
+    pub fn new_for_scope(scope: InstallScope) -> Result<Self> {
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
 
-        let config_dir = veltrix::os::paths::system_config_dir(CONFIG_DIR_NAME);
+        let (config_dir, cache_dir, state_dir, log_dir) = match scope {
+            InstallScope::System => (
+                paths::system_config_dir(),
+                paths::system_cache_dir(),
+                paths::system_state_dir(),
+                paths::system_log_dir(),
+            ),
+            InstallScope::User | InstallScope::Container => (
+                paths::user_config_dir()?,
+                paths::user_cache_dir()?,
+                paths::user_state_dir()?,
+                paths::user_log_dir()?,
+            ),
+        };
 
-        let cache_dir = veltrix::os::paths::system_cache_dir(CACHE_DIR_NAME);
-
-        let state_dir = veltrix::os::paths::system_state_dir(STATE_DIR_NAME);
-
-        Self {
+        Ok(Self {
             cwd,
             config_path: None,
             config_dir,
             cache_dir,
             state_dir,
+            log_dir,
+        })
+    }
+
+    pub fn user_fallback() -> Self {
+        let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        let home = std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("."));
+        let local_share = home.join(".local").join("share").join("cadman");
+        let local_state = home.join(".local").join("state").join("cadman");
+
+        Self {
+            cwd,
+            config_path: None,
+            config_dir: home.join(".config").join("cadman"),
+            cache_dir: home.join(".cache").join("cadman"),
+            state_dir: local_share,
+            log_dir: local_state.join("logs"),
         }
+    }
+
+    pub fn config_dir(&self) -> &Path {
+        &self.config_dir
+    }
+
+    pub fn cache_dir(&self) -> &Path {
+        &self.cache_dir
+    }
+
+    pub fn state_dir(&self) -> &Path {
+        &self.state_dir
+    }
+
+    pub fn log_dir(&self) -> &Path {
+        &self.log_dir
     }
 }
 
@@ -318,5 +414,87 @@ fn select_root_run_mode(user_info: &RuntimeUserInfo) -> RunMode {
         RunMode::Root
     } else {
         select_cadman_run_mode(user_info)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::constants::{CONFIG_FILE_NAME, REGISTRY_FILE_NAME, STATE_FILE_NAME};
+
+    #[test]
+    fn user_scope_uses_user_dirs() {
+        let paths = RuntimePaths::new_for_scope(InstallScope::User).unwrap();
+
+        assert!(!paths.config_dir().starts_with("/etc/cadman"));
+        assert!(!paths.state_dir().starts_with("/var/lib/cadman"));
+        assert!(!paths.cache_dir().starts_with("/var/cache/cadman"));
+        assert!(!paths.log_dir().starts_with("/var/log/cadman"));
+    }
+
+    #[test]
+    fn system_scope_uses_system_dirs() {
+        let paths = RuntimePaths::new_for_scope(InstallScope::System).unwrap();
+
+        assert_eq!(paths.config_dir(), Path::new("/etc/cadman"));
+        assert_eq!(paths.state_dir(), Path::new("/var/lib/cadman"));
+        assert_eq!(paths.cache_dir(), Path::new("/var/cache/cadman"));
+        assert_eq!(paths.log_dir(), Path::new("/var/log/cadman"));
+    }
+
+    #[test]
+    fn container_scope_does_not_default_to_system_dirs() {
+        let paths = RuntimePaths::new_for_scope(InstallScope::Container).unwrap();
+
+        assert!(!paths.config_dir().starts_with("/etc/cadman"));
+        assert!(!paths.state_dir().starts_with("/var/lib/cadman"));
+    }
+
+    #[test]
+    fn runtime_file_paths_use_v1_names() {
+        let mut runtime = Runtime::new();
+        runtime.set_install_scope(InstallScope::User);
+
+        assert!(runtime.default_config_path().ends_with(CONFIG_FILE_NAME));
+        assert!(runtime.registry_path().ends_with(REGISTRY_FILE_NAME));
+        assert!(runtime.state_path().ends_with(STATE_FILE_NAME));
+    }
+
+    #[test]
+    fn setting_root_run_mode_does_not_change_install_scope() {
+        let mut runtime = Runtime::new();
+        runtime.set_install_scope(InstallScope::User);
+        runtime.set_run_mode(RunMode::Root);
+
+        assert_eq!(runtime.install_scope(), InstallScope::User);
+        assert!(!runtime.default_config_path().starts_with("/etc/cadman"));
+    }
+
+    #[test]
+    fn explicit_non_system_config_path_changes_config_only() {
+        let mut runtime = Runtime::new();
+        runtime.set_install_scope(InstallScope::User);
+        runtime.set_config_path(Some(PathBuf::from("/tmp/cadman/config.toml")));
+
+        assert_eq!(
+            runtime.effective_config_path(),
+            PathBuf::from("/tmp/cadman/config.toml")
+        );
+        assert_eq!(runtime.install_scope(), InstallScope::User);
+        assert!(runtime.registry_path().ends_with(REGISTRY_FILE_NAME));
+    }
+
+    #[test]
+    fn explicit_etc_config_path_selects_system_scope() {
+        let mut runtime = Runtime::new();
+        runtime.set_install_scope(InstallScope::User);
+        runtime.set_config_path(Some(PathBuf::from("/etc/cadman/config.toml")));
+
+        assert_eq!(runtime.install_scope(), InstallScope::System);
+        assert_eq!(
+            runtime.effective_config_path(),
+            PathBuf::from("/etc/cadman/config.toml")
+        );
+        assert!(runtime.registry_path().starts_with("/var/lib/cadman"));
     }
 }

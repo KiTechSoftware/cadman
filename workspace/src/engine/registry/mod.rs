@@ -3,9 +3,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::engine::{
-    ErrorCode, Result, constants::APPS_FILE_NAME, models::runtime::Runtime, system::fs,
-};
+use crate::engine::{ErrorCode, Result, models::runtime::Runtime, system::fs};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -96,7 +94,7 @@ impl Registry {
 
 /// Return the path to the registry file.
 pub fn path(runtime: &Runtime) -> PathBuf {
-    runtime.config_dir().join(APPS_FILE_NAME)
+    runtime.registry_path()
 }
 
 /// Load registry. Returns an empty registry if the file does not exist.

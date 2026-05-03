@@ -3,9 +3,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::engine::{
-    ErrorCode, Result, constants::STATE_FILE_NAME, models::runtime::Runtime, system::fs,
-};
+use crate::engine::{ErrorCode, Result, models::runtime::Runtime, system::fs};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -61,7 +59,7 @@ impl CadmanState {
 
 /// Return the path to the state file.
 pub fn path(runtime: &Runtime) -> PathBuf {
-    runtime.state_dir().join(STATE_FILE_NAME)
+    runtime.state_path()
 }
 
 /// Load state. Returns empty state if the file does not exist.

@@ -15,9 +15,12 @@ pub const APP_ABOUT: &str = "👷‍♂️ Cadman";
 pub const BIN_NAME: &str = APP_NAME;
 
 // Project-level constants
-pub const PROJECT_CONFIG_FILE_NAME: &str = "cadman.toml";
-pub const PROJECT_CONFIG_FILE_NAME_YAML: &str = "cadman.yaml";
-pub const PROJECT_CONFIG_FILE_NAME_YML: &str = "cadman.yml";
+pub const PROJECT_CONFIG_TOML_FILE_NAME: &str = "cadman.toml";
+pub const PROJECT_CONFIG_YAML_FILE_NAME: &str = "cadman.yaml";
+pub const PROJECT_CONFIG_YML_FILE_NAME: &str = "cadman.yml";
+pub const PROJECT_CONFIG_FILE_NAME: &str = PROJECT_CONFIG_TOML_FILE_NAME;
+pub const PROJECT_CONFIG_FILE_NAME_YAML: &str = PROJECT_CONFIG_YAML_FILE_NAME;
+pub const PROJECT_CONFIG_FILE_NAME_YML: &str = PROJECT_CONFIG_YML_FILE_NAME;
 
 // System Constants
 pub const CONFIG_DIR_NAME: &str = APP_NAME;
@@ -26,8 +29,8 @@ pub const STATE_DIR_NAME: &str = APP_NAME;
 pub const LOG_DIR_NAME: &str = APP_NAME;
 
 pub const CONFIG_FILE_NAME: &str = "config.toml";
+pub const REGISTRY_FILE_NAME: &str = "registry.toml";
 pub const STATE_FILE_NAME: &str = "state.json";
-pub const APPS_FILE_NAME: &str = "registry.toml";
 pub const LOG_FILE_NAME: &str = "cadman.log";
 
 pub const CADMAN_USER_NAME: &str = APP_NAME;

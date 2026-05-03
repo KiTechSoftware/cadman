@@ -1,6 +1,7 @@
 use crate::engine::{
     constants::{
-        APP_NAME, BIN_NAME, CACHE_DIR_NAME, CONFIG_DIR_NAME, CONFIG_FILE_NAME, STATE_DIR_NAME,
+        APP_NAME, BIN_NAME, CACHE_DIR_NAME, CONFIG_DIR_NAME, CONFIG_FILE_NAME, REGISTRY_FILE_NAME,
+        STATE_DIR_NAME, STATE_FILE_NAME,
     },
     errors::{ErrorCode, Result},
 };
@@ -34,6 +35,18 @@ pub fn system_config_path() -> PathBuf {
 
 pub fn system_state_dir() -> PathBuf {
     paths::system_state_dir(STATE_DIR_NAME)
+}
+
+pub fn system_registry_path() -> PathBuf {
+    system_state_dir().join(REGISTRY_FILE_NAME)
+}
+
+pub fn system_state_path() -> PathBuf {
+    system_state_dir().join(STATE_FILE_NAME)
+}
+
+pub fn system_cache_dir() -> PathBuf {
+    paths::system_cache_dir(CACHE_DIR_NAME)
 }
 
 pub fn system_log_dir() -> PathBuf {
@@ -78,6 +91,14 @@ pub fn user_state_dir() -> Result<PathBuf> {
     })
 }
 
+pub fn user_registry_path() -> Result<PathBuf> {
+    Ok(user_state_dir()?.join(REGISTRY_FILE_NAME))
+}
+
+pub fn user_state_path() -> Result<PathBuf> {
+    Ok(user_state_dir()?.join(STATE_FILE_NAME))
+}
+
 pub fn user_cache_dir() -> Result<PathBuf> {
     paths::user_cache_dir(CACHE_DIR_NAME).map_err(|_| {
         ErrorCode::ConfigInvalid
@@ -87,11 +108,7 @@ pub fn user_cache_dir() -> Result<PathBuf> {
 }
 
 pub fn user_log_dir() -> Result<PathBuf> {
-    paths::user_log_dir(APP_NAME).map_err(|_| {
-        ErrorCode::ConfigInvalid
-            .error()
-            .with_context("reason", "Unable to determine user log directory")
-    })
+    paths::user_log_dir(APP_NAME).or_else(|_| Ok(user_state_dir()?.join("logs")))
 }
 
 pub fn user_bin_dir() -> Result<PathBuf> {
