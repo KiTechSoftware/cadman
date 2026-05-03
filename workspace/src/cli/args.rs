@@ -85,6 +85,8 @@ pub struct Cli {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
+    /// Inspect and initialize Cadman global configuration
+    Config(cmd::config::Args),
     /// List Podman containers visible to Cadman
     Containers(cmd::containers::Args),
     /// Create a Cadman project configuration

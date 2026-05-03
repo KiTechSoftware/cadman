@@ -3,8 +3,7 @@ use std::path::PathBuf;
 use crate::engine::{
     ErrorCode, Result,
     constants::{
-        CADDY_SERVICE_NAME, CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME,
-        paths,
+        CADDY_SERVICE_NAME, CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME, paths,
     },
     models::runtime::RunMode,
 };

@@ -119,19 +119,24 @@ pub fn load(runtime: &Runtime) -> Result<CadmanConfig> {
     if !p.exists() {
         return Ok(default_for(runtime));
     }
-    fs::load_toml(&p).map_err(|_| {
+
+    let raw = fs::read_text(&p).map_err(|err| {
         ErrorCode::ConfigUnreadable
             .error()
             .with_context("path", p.display().to_string())
+            .with_context("error", err.to_string())
+    })?;
+
+    toml::from_str(&raw).map_err(|err| {
+        ErrorCode::ConfigInvalid
+            .error()
+            .with_context("path", p.display().to_string())
+            .with_context("error", err.to_string())
     })
 }
 
 /// Save global config to the runtime config path.
 pub fn save(runtime: &Runtime, config: &CadmanConfig) -> Result<()> {
     let p = path(runtime);
-    fs::save_toml(&p, config).map_err(|_| {
-        ErrorCode::ConfigInvalid
-            .error()
-            .with_context("path", p.display().to_string())
-    })
+    fs::save_toml(&p, config)
 }
