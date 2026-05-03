@@ -2,8 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     cli::cmd,
-    core::bootstrap::AppContextArgs,
-    engine::constants::{APP_ABOUT, APP_NAME},
+    core::{APP_ABOUT, APP_NAME, bootstrap::AppContextArgs},
 };
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 
@@ -86,6 +85,8 @@ pub struct Cli {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
+    /// List Podman containers visible to Cadman
+    Containers(cmd::containers::Args),
     /// Run Podman Compose through Cadman
     Compose(cmd::wrappers::compose::Args),
     /// Run Podman through Cadman

@@ -33,7 +33,7 @@ impl InteractiveMode {
 #[serde(rename_all = "kebab-case")]
 pub enum RunMode {
     #[default]
-    User,
+    Current,
     Cadman,
     Root,
 }
@@ -41,23 +41,23 @@ pub enum RunMode {
 impl RunMode {
     pub fn parse(value: &str) -> Self {
         match value {
-            "user" => Self::User,
+            "current" | "user" => Self::Current,
             "cadman" => Self::Cadman,
             "root" => Self::Root,
-            _ => Self::User,
+            _ => Self::Current,
         }
     }
 
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::User => "user",
+            Self::Current => "current",
             Self::Cadman => "cadman",
             Self::Root => "root",
         }
     }
 
     pub fn is_poc_supported(self) -> bool {
-        matches!(self, Self::User | Self::Cadman)
+        matches!(self, Self::Current | Self::Cadman)
     }
 }
 

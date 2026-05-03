@@ -25,7 +25,7 @@ impl Default for Process {
 impl Process {
     pub fn new(binary: &str) -> Self {
         Self {
-            mode: RunMode::User,
+            mode: RunMode::Current,
             cwd: None,
             spec: CmdSpec::new(binary),
         }
@@ -187,7 +187,7 @@ fn check_user(mode: RunMode) -> User {
     let cadman_uid = unistd::uid_by_username(CADMAN_USER_NAME);
 
     match mode {
-        RunMode::User => {
+        RunMode::Current => {
             // If running as cadman, treat as Cadman.
             if cadman_uid.is_some_and(|uid| current_uid == uid) {
                 uid = cadman_uid.map(|u| u.as_raw());

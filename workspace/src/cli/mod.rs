@@ -55,11 +55,13 @@ async fn async_run() -> ExitCode {
 
     let result = match cli.command {
         args::Command::Caddy(args) => cmd::wrappers::caddy::run(&ctx, args).await,
+        args::Command::Containers(args) => cmd::containers::run(&ctx, args).await,
         args::Command::Compose(args) => cmd::wrappers::compose::run(&ctx, args).await,
         args::Command::Podman(args) => cmd::wrappers::podman::run(&ctx, args).await,
     };
 
     if let Err(err) = result {
+        report_error(&err);
         return exit_code(&err);
     }
 

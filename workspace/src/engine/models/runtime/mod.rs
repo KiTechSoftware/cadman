@@ -101,7 +101,7 @@ impl Default for Runtime {
 impl Runtime {
     pub fn new() -> Self {
         Self {
-            run_mode: RunMode::User,
+            run_mode: RunMode::Current,
             interactive_mode: InteractiveMode::Interactive,
             options: RuntimeOptions::new(),
             paths: RuntimePaths::new(),
@@ -141,7 +141,7 @@ impl Runtime {
     pub fn effective_run_mode(&self) -> RunMode {
         // check self run mod with users actual permissions to determine effective run mode
         match self.run_mode {
-            RunMode::User => select_user_run_mode(&self.user_info),
+            RunMode::Current => select_user_run_mode(&self.user_info),
             RunMode::Cadman => select_cadman_run_mode(&self.user_info),
             RunMode::Root => select_root_run_mode(&self.user_info),
         }
@@ -301,7 +301,7 @@ fn select_user_run_mode(user_info: &RuntimeUserInfo) -> RunMode {
     if user_info.is_cadman() {
         RunMode::Cadman
     } else {
-        RunMode::User
+        RunMode::Current
     }
 }
 
@@ -309,7 +309,7 @@ fn select_cadman_run_mode(user_info: &RuntimeUserInfo) -> RunMode {
     if user_info.is_cadman() || user_info.in_cadman_group() || user_info.in_admin_group() {
         RunMode::Cadman
     } else {
-        RunMode::User
+        RunMode::Current
     }
 }
 
