@@ -91,6 +91,8 @@ pub enum Command {
     Config(cmd::config::Args),
     /// List Podman containers visible to Cadman
     Containers(cmd::containers::Args),
+    /// Run read-only Cadman diagnostics
+    Doctor(cmd::doctor::Args),
     /// Create a Cadman project configuration
     Init(cmd::init::Args),
     /// Run Podman Compose through Cadman
