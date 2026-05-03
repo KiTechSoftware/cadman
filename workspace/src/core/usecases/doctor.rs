@@ -36,14 +36,28 @@ pub async fn render(ctx: &Context) -> CoreResult<()> {
         )
         .key_value("Install Scope", &report.diagnostics.install_scope)
         .key_value("Effective User", &report.diagnostics.effective_user)
+        .key_value(
+            "Container Scopes",
+            report.diagnostics.authorized_container_scopes.join(","),
+        )
         .key_value("Config", report.diagnostics.config_path.display())
         .key_value("Registry", report.diagnostics.registry_path.display())
-        .key_value("State", report.diagnostics.state_path.display());
+        .key_value("State", report.diagnostics.state_path.display())
+        .key_value("Caddy Sites", report.diagnostics.caddy_sites_dir.display())
+        .key_value("Config Readable", report.diagnostics.config_readable)
+        .key_value("Registry Readable", report.diagnostics.registry_readable)
+        .key_value("Registry Writable", report.diagnostics.registry_writable)
+        .key_value("State Readable", report.diagnostics.state_readable)
+        .key_value("State Writable", report.diagnostics.state_writable)
+        .key_value(
+            "Stale Sites",
+            report.diagnostics.stale_generated_site_files.len(),
+        );
 
-    if report.warnings.is_empty() {
+    if !report.warnings.is_empty() {
         output = output.key_value("Warnings", format_messages(&report.warnings))
     }
-    if report.errors.is_empty() {
+    if !report.errors.is_empty() {
         output = output.key_value("Errors", format_messages(&report.errors))
     }
     ctx.ui().print(&output)
@@ -66,6 +80,32 @@ fn report_from_diagnostics(diagnostics: DiagnosticsReport) -> DoctorReport {
     }
     if !diagnostics.systemd_available {
         warnings.push("systemd unit directory is not available".to_string());
+    }
+    if !diagnostics.caddy_sites_dir_exists {
+        warnings.push("Caddy sites directory does not exist".to_string());
+    } else if !diagnostics.caddy_sites_dir_writable {
+        warnings.push("Caddy sites directory is not writable".to_string());
+    }
+    if !diagnostics.config_readable {
+        errors.push("config file is not readable".to_string());
+    }
+    if !diagnostics.registry_readable {
+        errors.push("registry file is not readable".to_string());
+    }
+    if !diagnostics.registry_writable {
+        warnings.push("registry path is not writable".to_string());
+    }
+    if !diagnostics.state_readable {
+        errors.push("state file is not readable".to_string());
+    }
+    if !diagnostics.state_writable {
+        warnings.push("state path is not writable".to_string());
+    }
+    if !diagnostics.stale_generated_site_files.is_empty() {
+        warnings.push(format!(
+            "{} stale generated Caddy site file(s) found",
+            diagnostics.stale_generated_site_files.len()
+        ));
     }
 
     if diagnostics.install_scope == "system" {
@@ -113,9 +153,19 @@ mod tests {
             current_user_in_admin_group: false,
             install_scope: "system".to_string(),
             effective_user: "alice".to_string(),
+            authorized_container_scopes: vec!["current".to_string()],
             config_path: PathBuf::from("/etc/cadman/config.toml"),
             registry_path: PathBuf::from("/var/lib/cadman/registry.toml"),
             state_path: PathBuf::from("/var/lib/cadman/state.json"),
+            caddy_sites_dir: PathBuf::from("/var/lib/cadman/caddy/sites"),
+            caddy_sites_dir_exists: true,
+            caddy_sites_dir_writable: true,
+            config_readable: true,
+            registry_readable: true,
+            registry_writable: true,
+            state_readable: true,
+            state_writable: true,
+            stale_generated_site_files: Vec::new(),
         }
     }
 
@@ -161,5 +211,12 @@ mod tests {
 
         assert_eq!(report.diagnostics.install_scope, "user");
         assert!(report.diagnostics.config_path.ends_with("config.toml"));
+    }
+
+    #[test]
+    fn doctor_report_serializes() {
+        let report = report_from_diagnostics(diagnostics());
+
+        assert!(serde_json::to_string(&report).is_ok());
     }
 }

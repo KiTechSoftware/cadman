@@ -20,8 +20,12 @@ use crate::{
 pub struct StatusReport {
     pub runtime: StatusRuntime,
     pub diagnostics: DiagnosticsReport,
+    pub config_path: PathBuf,
     pub registry_path: PathBuf,
     pub state_path: PathBuf,
+    pub authorized_container_scopes: Vec<String>,
+    pub observed_containers: usize,
+    pub last_reconcile_at: Option<String>,
     pub apps: Vec<AppStatus>,
 }
 
@@ -53,6 +57,9 @@ pub struct AppStatus {
     pub last_seen_at: Option<String>,
     pub last_reconcile_at: Option<String>,
     pub routes: Vec<RouteStatus>,
+    pub route_hosts: Vec<String>,
+    pub site_state: String,
+    pub warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -74,8 +81,18 @@ pub async fn render(ctx: &Context, app: Option<&str>) -> CoreResult<()> {
         .key_value("Requested RunMode", &report.runtime.requested_mode)
         .key_value("Effective RunMode", &report.runtime.effective_mode)
         .key_value("Effective User", &report.runtime.effective_user)
+        .key_value(
+            "Container Scopes",
+            report.authorized_container_scopes.join(","),
+        )
+        .key_value("Config", report.config_path.display())
         .key_value("Registry", report.registry_path.display())
         .key_value("State", report.state_path.display())
+        .key_value(
+            "Last Reconcile",
+            report.last_reconcile_at.as_deref().unwrap_or("-"),
+        )
+        .key_value("Observed Containers", report.observed_containers)
         .key_value("Podman", report.diagnostics.podman_available)
         .key_value("Caddy", report.diagnostics.caddy_available)
         .key_value("Apps", report.apps.len());
@@ -89,11 +106,13 @@ pub async fn render(ctx: &Context, app: Option<&str>) -> CoreResult<()> {
 
 pub async fn status(ctx: &Context, app: Option<&str>) -> CoreResult<StatusReport> {
     let diagnostics = collect_diagnostics(ctx.runtime())?;
+    let config_path = diagnostics.config_path.clone();
     let registry_path = registry::path(ctx.runtime());
     let state_path = state::path(ctx.runtime());
     let registry = registry::load(ctx.runtime())?;
     let state = state::load(ctx.runtime())?;
     let containers = visible_containers(ctx, diagnostics.podman_available).await;
+    let observed_containers = containers.len();
 
     let apps: Vec<RegistryApp> = if let Some(app) = app {
         vec![registry.get(app).cloned().ok_or_else(|| {
@@ -113,6 +132,34 @@ pub async fn status(ctx: &Context, app: Option<&str>) -> CoreResult<StatusReport
                 .iter()
                 .find(|container| container_matches(app, container));
 
+            let routes: Vec<RouteStatus> = saved
+                .map(|state| {
+                    state
+                        .routes
+                        .iter()
+                        .map(|route| RouteStatus {
+                            route_id: route.route_id.clone(),
+                            hosts: route.hosts.clone(),
+                            site_path: route.site_path.clone(),
+                            site_hash: route.site_hash.clone(),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            let route_hosts = routes
+                .iter()
+                .flat_map(|route| route.hosts.clone())
+                .collect::<Vec<_>>();
+            let caddy_site_path = saved.and_then(|state| state.caddy_site_path.clone());
+            let site_state = site_state(caddy_site_path.as_ref());
+            let mut warnings = Vec::new();
+            if app.source == RegistrySource::PodmanLabels && live.is_none() {
+                warnings.push("label-sourced container is not currently visible".to_string());
+            }
+            if site_state == "missing" {
+                warnings.push("Caddy site file is missing".to_string());
+            }
+
             AppStatus {
                 id: app.id.clone(),
                 name: app.name.clone(),
@@ -128,27 +175,17 @@ pub async fn status(ctx: &Context, app: Option<&str>) -> CoreResult<StatusReport
                 container_health: live
                     .and_then(|container| container.health.clone())
                     .or_else(|| saved.and_then(|state| state.container_health.clone())),
-                caddy_site_path: saved.and_then(|state| state.caddy_site_path.clone()),
+                caddy_site_path,
                 config_hash: saved.and_then(|state| state.config_hash.clone()),
                 labels_hash: saved.and_then(|state| state.labels_hash.clone()),
                 ports_hash: saved.and_then(|state| state.ports_hash.clone()),
                 site_hash: saved.and_then(|state| state.site_hash.clone()),
                 last_seen_at: saved.and_then(|state| state.last_seen_at.clone()),
                 last_reconcile_at: saved.and_then(|state| state.last_reconcile_at.clone()),
-                routes: saved
-                    .map(|state| {
-                        state
-                            .routes
-                            .iter()
-                            .map(|route| RouteStatus {
-                                route_id: route.route_id.clone(),
-                                hosts: route.hosts.clone(),
-                                site_path: route.site_path.clone(),
-                                site_hash: route.site_hash.clone(),
-                            })
-                            .collect()
-                    })
-                    .unwrap_or_default(),
+                routes,
+                route_hosts,
+                site_state,
+                warnings,
             }
         })
         .collect();
@@ -161,8 +198,17 @@ pub async fn status(ctx: &Context, app: Option<&str>) -> CoreResult<StatusReport
             effective_user: ctx.runtime().effective_user().to_string(),
         },
         diagnostics,
+        config_path,
         registry_path,
         state_path,
+        authorized_container_scopes: ctx
+            .runtime()
+            .visible_container_scopes()
+            .into_iter()
+            .map(|scope| scope.to_string())
+            .collect(),
+        observed_containers,
+        last_reconcile_at: state.last_reconcile_at.clone(),
         apps,
     })
 }
@@ -193,12 +239,15 @@ fn apps_table(apps: &[AppStatus]) -> scriba::Table {
                 app.id.clone(),
                 app.name.clone(),
                 app.desired_status.clone(),
+                app.source.clone(),
                 app.container_state
                     .clone()
                     .unwrap_or_else(|| "-".to_string()),
                 app.container_health
                     .clone()
                     .unwrap_or_else(|| "-".to_string()),
+                app.routes.len().to_string(),
+                app.site_state.clone(),
             ]
         })
         .collect();
@@ -208,11 +257,22 @@ fn apps_table(apps: &[AppStatus]) -> scriba::Table {
             "ID".to_string(),
             "NAME".to_string(),
             "DESIRED".to_string(),
+            "SOURCE".to_string(),
             "STATE".to_string(),
             "HEALTH".to_string(),
+            "ROUTES".to_string(),
+            "SITE".to_string(),
         ],
         rows,
     )
+}
+
+fn site_state(path: Option<&PathBuf>) -> String {
+    match path {
+        Some(path) if path.is_file() => "present".to_string(),
+        Some(_) => "missing".to_string(),
+        None => "-".to_string(),
+    }
 }
 
 fn desired_status_string(status: DesiredStatus) -> String {
