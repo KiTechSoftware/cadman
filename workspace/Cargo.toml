@@ -14,6 +14,7 @@ veltrix = { path = "../../veltrix/workspace/veltrix", features = ["full"] }
 thiserror = "1"
 toml = "0.8"
 termsize = "0.1"
+serde_yaml = "0.9"
 
 [[bin]]
 name = "cadman"
