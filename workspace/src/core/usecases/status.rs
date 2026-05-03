@@ -45,7 +45,22 @@ pub struct AppStatus {
     pub container_name: Option<String>,
     pub container_state: Option<String>,
     pub container_health: Option<String>,
+    pub caddy_site_path: Option<PathBuf>,
+    pub config_hash: Option<String>,
+    pub labels_hash: Option<String>,
+    pub ports_hash: Option<String>,
+    pub site_hash: Option<String>,
     pub last_seen_at: Option<String>,
+    pub last_reconcile_at: Option<String>,
+    pub routes: Vec<RouteStatus>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RouteStatus {
+    pub route_id: String,
+    pub hosts: Vec<String>,
+    pub site_path: PathBuf,
+    pub site_hash: String,
 }
 
 pub async fn render(ctx: &Context, app: Option<&str>) -> CoreResult<()> {
@@ -113,7 +128,27 @@ pub async fn status(ctx: &Context, app: Option<&str>) -> CoreResult<StatusReport
                 container_health: live
                     .and_then(|container| container.health.clone())
                     .or_else(|| saved.and_then(|state| state.container_health.clone())),
+                caddy_site_path: saved.and_then(|state| state.caddy_site_path.clone()),
+                config_hash: saved.and_then(|state| state.config_hash.clone()),
+                labels_hash: saved.and_then(|state| state.labels_hash.clone()),
+                ports_hash: saved.and_then(|state| state.ports_hash.clone()),
+                site_hash: saved.and_then(|state| state.site_hash.clone()),
                 last_seen_at: saved.and_then(|state| state.last_seen_at.clone()),
+                last_reconcile_at: saved.and_then(|state| state.last_reconcile_at.clone()),
+                routes: saved
+                    .map(|state| {
+                        state
+                            .routes
+                            .iter()
+                            .map(|route| RouteStatus {
+                                route_id: route.route_id.clone(),
+                                hosts: route.hosts.clone(),
+                                site_path: route.site_path.clone(),
+                                site_hash: route.site_hash.clone(),
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default(),
             }
         })
         .collect();

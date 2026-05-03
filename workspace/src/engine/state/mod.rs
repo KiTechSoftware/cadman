@@ -27,6 +27,18 @@ pub struct AppState {
     pub ports_hash: Option<String>,
     pub site_hash: Option<String>,
     pub last_seen_at: Option<String>,
+    pub last_reconcile_at: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub routes: Vec<RouteState>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct RouteState {
+    pub route_id: String,
+    pub hosts: Vec<String>,
+    pub site_path: PathBuf,
+    pub site_hash: String,
 }
 
 impl Default for CadmanState {

@@ -22,7 +22,9 @@ pub async fn render(ctx: &Context) -> CoreResult<()> {
         .key_value("Sites Changed", report.caddy.changed)
         .key_value("Site Actions", report.caddy.actions.len())
         .key_value("Caddy Validate", command_status(&report.caddy.validation))
-        .key_value("Caddy Reload", command_status(&report.caddy.reload));
+        .key_value("Caddy Reload", command_status(&report.caddy.reload))
+        .key_value("State Updated", report.state_updated)
+        .key_value("Warnings", report.warnings.len());
 
     if !report.desired_routes.is_empty() {
         output = output.table(None, routes_table(&report))
