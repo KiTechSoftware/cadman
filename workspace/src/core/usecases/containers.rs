@@ -53,10 +53,11 @@ pub async fn list(
         stopped,
     };
     let filter = options.filter()?;
-    
+
     let report = podman::list_containers(ctx.runtime(), filter).await?;
     let ui = ctx.ui();
-    let mut output = ui.new_output_content()
+    let mut output = ui
+        .new_output_content()
         .key_value("Requested RunMode", &report.runtime.requested_mode)
         .key_value("Effective RunMode", &report.runtime.effective_mode)
         .key_value("Effective user", &report.runtime.effective_user)
@@ -67,7 +68,11 @@ pub async fn list(
     ctx.ui().print(&output)
 }
 
-fn container_table(report: &ContainerListReport, include_labels: bool, terminal_size: TerminalSize) -> scriba::Table {
+fn container_table(
+    report: &ContainerListReport,
+    include_labels: bool,
+    terminal_size: TerminalSize,
+) -> scriba::Table {
     let layout = terminal_size.table_layout();
 
     let mut headers = vec![

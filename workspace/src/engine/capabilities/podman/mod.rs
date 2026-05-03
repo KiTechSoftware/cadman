@@ -98,17 +98,13 @@ fn cli_spec_for_mode(mode: RunMode) -> PodmanCliSpec {
 
     match mode {
         RunMode::Current => {
-            if cadman_uid.is_some_and(|uid| current_uid == uid) {
-                if let Some(uid) = cadman_uid {
-                    spec = spec.uid(uid.as_raw());
-                }
+            if let Some(uid) = cadman_uid.filter(|uid| *uid == current_uid) {
+                spec = spec.uid(uid.as_raw());
             }
         }
         RunMode::Cadman => {
-            if cadman_uid.is_some_and(|uid| current_uid == uid) {
-                if let Some(uid) = cadman_uid {
-                    spec = spec.uid(uid.as_raw());
-                }
+            if let Some(uid) = cadman_uid.filter(|uid| *uid == current_uid) {
+                spec = spec.uid(uid.as_raw());
             } else {
                 spec = spec.sudo();
                 if let Some(uid) = cadman_uid {

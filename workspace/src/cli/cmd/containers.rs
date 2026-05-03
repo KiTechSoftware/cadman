@@ -2,9 +2,7 @@ use clap::Args as ClapArgs;
 
 use crate::{
     cli::CliResult,
-    core::{
-        Context, containers,
-    },
+    core::{Context, containers},
 };
 
 #[derive(Debug, Clone, ClapArgs)]

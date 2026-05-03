@@ -74,23 +74,53 @@ mod tests {
 
     #[test]
     fn test_terminal_size_classification() {
-        assert!(TerminalSize { width: 80, height: 24 }.is_narrow());
-        assert!(TerminalSize { width: 100, height: 24 }.is_standard());
-        assert!(TerminalSize { width: 160, height: 24 }.is_wide());
+        assert!(
+            TerminalSize {
+                width: 80,
+                height: 24
+            }
+            .is_narrow()
+        );
+        assert!(
+            TerminalSize {
+                width: 100,
+                height: 24
+            }
+            .is_standard()
+        );
+        assert!(
+            TerminalSize {
+                width: 160,
+                height: 24
+            }
+            .is_wide()
+        );
     }
 
     #[test]
     fn test_table_layout() {
         assert_eq!(
-            TerminalSize { width: 80, height: 24 }.table_layout(),
+            TerminalSize {
+                width: 80,
+                height: 24
+            }
+            .table_layout(),
             scriba::TableLayout::Stacked
         );
         assert_eq!(
-            TerminalSize { width: 100, height: 24 }.table_layout(),
+            TerminalSize {
+                width: 100,
+                height: 24
+            }
+            .table_layout(),
             scriba::TableLayout::Compact
         );
         assert_eq!(
-            TerminalSize { width: 160, height: 24 }.table_layout(),
+            TerminalSize {
+                width: 160,
+                height: 24
+            }
+            .table_layout(),
             scriba::TableLayout::Full
         );
     }
