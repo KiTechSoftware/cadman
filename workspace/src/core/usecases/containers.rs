@@ -3,6 +3,7 @@ use crate::{
     engine::{
         ErrorCode,
         capabilities::podman::{self, ContainerListFilter},
+        system::terminal::TerminalSize,
     },
 };
 
@@ -61,12 +62,14 @@ pub async fn list(
         .key_value("Effective user", &report.runtime.effective_user)
         .key_value("Podman source", &report.runtime.podman_source);
 
-    
-    output = output.table(None, container_table(&report, labels));
+    let terminal_size = TerminalSize::current();
+    output = output.table(None, container_table(&report, labels, terminal_size));
     ctx.ui().print(&output)
 }
 
-fn container_table(report: &ContainerListReport, include_labels: bool) -> scriba::Table {
+fn container_table(report: &ContainerListReport, include_labels: bool, terminal_size: TerminalSize) -> scriba::Table {
+    let layout = terminal_size.table_layout();
+
     let mut headers = vec![
         "NAME".to_string(),
         "ID".to_string(),
@@ -101,7 +104,7 @@ fn container_table(report: &ContainerListReport, include_labels: bool) -> scriba
         })
         .collect();
 
-    scriba::Table::new(headers, rows).with_layout_compact()
+    scriba::Table::new(headers, rows).with_layout(layout)
 }
 
 fn text_or_dash(value: &str) -> String {
