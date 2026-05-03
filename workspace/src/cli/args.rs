@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 
-use crate::{cli::cmd, core::bootstrap::AppContextArgs, engine::constants::{APP_ABOUT, APP_NAME}};
+use crate::{
+    cli::cmd,
+    core::bootstrap::AppContextArgs,
+    engine::constants::{APP_ABOUT, APP_NAME},
+};
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
