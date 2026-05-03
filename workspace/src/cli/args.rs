@@ -85,6 +85,8 @@ pub struct Cli {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
+    /// Register the current Cadman project
+    Add(cmd::add::Args),
     /// Inspect and initialize Cadman global configuration
     Config(cmd::config::Args),
     /// List Podman containers visible to Cadman
@@ -97,6 +99,8 @@ pub enum Command {
     Podman(cmd::wrappers::podman::Args),
     /// Inspect and mutate the Cadman registry
     Registry(cmd::registry::Args),
+    /// Remove an app from the Cadman registry
+    Remove(cmd::remove::Args),
     /// Run Caddy through Cadman
     Caddy(cmd::wrappers::caddy::Args),
 }

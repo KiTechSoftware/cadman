@@ -54,6 +54,7 @@ async fn async_run() -> ExitCode {
     };
 
     let result = match cli.command {
+        args::Command::Add(args) => cmd::add::run(&ctx, args).await,
         args::Command::Caddy(args) => cmd::wrappers::caddy::run(&ctx, args).await,
         args::Command::Config(args) => cmd::config::run(&ctx, args).await,
         args::Command::Containers(args) => cmd::containers::run(&ctx, args).await,
@@ -61,6 +62,7 @@ async fn async_run() -> ExitCode {
         args::Command::Init(args) => cmd::init::run(&ctx, args).await,
         args::Command::Podman(args) => cmd::wrappers::podman::run(&ctx, args).await,
         args::Command::Registry(args) => cmd::registry::run(&ctx, args).await,
+        args::Command::Remove(args) => cmd::remove::run(&ctx, args).await,
     };
 
     if let Err(err) = result {

@@ -120,3 +120,39 @@ pub fn save(runtime: &Runtime, registry: &Registry) -> Result<()> {
             .with_context("path", p.display().to_string())
     })
 }
+
+pub fn sanitize_app_id(value: &str) -> String {
+    let mut sanitized = String::new();
+    let mut previous_dash = false;
+
+    for ch in value.trim().to_ascii_lowercase().chars() {
+        if ch.is_ascii_alphanumeric() || ch == '_' {
+            sanitized.push(ch);
+            previous_dash = false;
+        } else if ch == '-' || ch.is_ascii_whitespace() || ch == '.' || ch == '/' {
+            if !previous_dash && !sanitized.is_empty() {
+                sanitized.push('-');
+                previous_dash = true;
+            }
+        }
+    }
+
+    let sanitized = sanitized.trim_matches('-').to_string();
+    if sanitized.is_empty() {
+        "project".to_string()
+    } else {
+        sanitized
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sanitize_app_id_normalizes_names() {
+        assert_eq!(sanitize_app_id("My App.local"), "my-app-local");
+        assert_eq!(sanitize_app_id(""), "project");
+        assert_eq!(sanitize_app_id("___"), "___");
+    }
+}
