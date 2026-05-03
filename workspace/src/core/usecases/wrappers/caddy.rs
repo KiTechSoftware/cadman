@@ -1,5 +1,5 @@
 use crate::core::{Context, CoreResult};
-use crate::engine::system::infra::caddy;
+use crate::engine::capabilities::caddy;
 
 pub async fn run(ctx: &Context, args: Vec<String>) -> CoreResult<()> {
     ctx.ui()

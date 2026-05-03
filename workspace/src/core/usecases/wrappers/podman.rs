@@ -1,5 +1,5 @@
 use crate::core::{Context, CoreResult};
-use crate::engine::system::infra::podman;
+use crate::engine::capabilities::podman;
 
 pub async fn run(ctx: &Context, args: Vec<String>) -> CoreResult<()> {
     ctx.ui()
