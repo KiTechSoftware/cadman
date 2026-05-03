@@ -8,7 +8,7 @@ use crate::{
     engine::{
         ErrorCode,
         config::{self, ProjectConfig},
-        registry::{self, DesiredStatus, RegistryApp},
+        registry::{self, DesiredStatus, RegistryApp, RegistrySource},
     },
 };
 
@@ -67,8 +67,12 @@ pub fn add_app(ctx: &Context, request: AddRequest) -> CoreResult<AddReport> {
     Ok(AddReport {
         id: app.id,
         name: app.name,
-        project_path: app.project_path,
-        config_path: app.config_path,
+        project_path: app
+            .project_path
+            .expect("project-config registry app has project_path"),
+        config_path: app
+            .config_path
+            .expect("project-config registry app has config_path"),
         registry_path,
         desired_status: desired_status_string(app.desired_status),
         managed: app.managed,
@@ -108,10 +112,14 @@ fn registry_app_from_project(
     RegistryApp {
         id,
         name,
-        project_path,
-        config_path,
+        source: RegistrySource::ProjectConfig,
+        project_path: Some(project_path),
+        config_path: Some(config_path),
         desired_status: DesiredStatus::Down,
         managed: true,
+        container_scope: None,
+        container_id: None,
+        container_name: None,
     }
 }
 

@@ -7,7 +7,7 @@ use crate::{
     core::{Context, CoreResult},
     engine::{
         ErrorCode,
-        registry::{self, RegistryApp},
+        registry::{self, RegistryApp, RegistrySource},
     },
 };
 
@@ -133,8 +133,10 @@ fn app_output(title: &str, path: PathBuf, app: &RegistryApp) -> Output {
         .key_value("Registry", path.display())
         .key_value("ID", &app.id)
         .key_value("Name", &app.name)
-        .key_value("Project", app.project_path.display())
-        .key_value("Config", app.config_path.display())
+        .key_value("Source", source_string(app.source))
+        .key_value("Project", optional_path(&app.project_path))
+        .key_value("Config", optional_path(&app.config_path))
+        .key_value("Container", optional_string(&app.container_name))
         .key_value("Desired", format!("{:?}", app.desired_status))
         .key_value("Managed", app.managed)
 }
@@ -146,9 +148,10 @@ fn apps_table(apps: &[RegistryApp]) -> scriba::Table {
             vec![
                 app.id.clone(),
                 app.name.clone(),
+                source_string(app.source),
                 format!("{:?}", app.desired_status),
                 app.managed.to_string(),
-                app.project_path.display().to_string(),
+                optional_path(&app.project_path),
             ]
         })
         .collect();
@@ -157,12 +160,30 @@ fn apps_table(apps: &[RegistryApp]) -> scriba::Table {
         vec![
             "ID".to_string(),
             "NAME".to_string(),
+            "SOURCE".to_string(),
             "DESIRED".to_string(),
             "MANAGED".to_string(),
             "PROJECT".to_string(),
         ],
         rows,
     )
+}
+
+fn source_string(source: RegistrySource) -> String {
+    match source {
+        RegistrySource::ProjectConfig => "project-config".to_string(),
+        RegistrySource::PodmanLabels => "podman-labels".to_string(),
+    }
+}
+
+fn optional_path(path: &Option<PathBuf>) -> String {
+    path.as_ref()
+        .map(|path| path.display().to_string())
+        .unwrap_or_else(|| "-".to_string())
+}
+
+fn optional_string(value: &Option<String>) -> String {
+    value.clone().unwrap_or_else(|| "-".to_string())
 }
 
 fn structured(ctx: &Context) -> bool {
@@ -182,10 +203,14 @@ mod tests {
         RegistryApp {
             id: id.to_string(),
             name: name.to_string(),
-            project_path: PathBuf::from(format!("/projects/{id}")),
-            config_path: PathBuf::from(format!("/projects/{id}/cadman.toml")),
+            source: RegistrySource::ProjectConfig,
+            project_path: Some(PathBuf::from(format!("/projects/{id}"))),
+            config_path: Some(PathBuf::from(format!("/projects/{id}/cadman.toml"))),
             desired_status: DesiredStatus::Down,
             managed: true,
+            container_scope: None,
+            container_id: None,
+            container_name: None,
         }
     }
 

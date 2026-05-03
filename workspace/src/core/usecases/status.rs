@@ -12,7 +12,7 @@ use crate::{
             podman::{self, ContainerListFilter},
         },
         models::containers::ContainerSummary,
-        registry::{self, DesiredStatus, RegistryApp},
+        registry::{self, DesiredStatus, RegistryApp, RegistrySource},
         state,
     },
 };
@@ -38,10 +38,12 @@ pub struct StatusRuntime {
 pub struct AppStatus {
     pub id: String,
     pub name: String,
+    pub source: String,
     pub desired_status: String,
     pub managed: bool,
-    pub project_path: PathBuf,
-    pub config_path: PathBuf,
+    pub project_path: Option<PathBuf>,
+    pub config_path: Option<PathBuf>,
+    pub container_name: Option<String>,
     pub container_state: Option<String>,
     pub container_health: Option<String>,
     pub last_seen_at: Option<String>,
@@ -103,10 +105,12 @@ pub async fn status(ctx: &Context, app: Option<&str>) -> CoreResult<StatusReport
             AppStatus {
                 id: app.id.clone(),
                 name: app.name.clone(),
+                source: source_string(app.source),
                 desired_status: desired_status_string(app.desired_status),
                 managed: app.managed,
                 project_path: app.project_path.clone(),
                 config_path: app.config_path.clone(),
+                container_name: app.container_name.clone(),
                 container_state: live
                     .map(|container| container.state.clone())
                     .or_else(|| saved.and_then(|state| state.container_state.clone())),
@@ -187,6 +191,13 @@ fn desired_status_string(status: DesiredStatus) -> String {
     }
 }
 
+fn source_string(source: RegistrySource) -> String {
+    match source {
+        RegistrySource::ProjectConfig => "project-config".to_string(),
+        RegistrySource::PodmanLabels => "podman-labels".to_string(),
+    }
+}
+
 fn structured(ctx: &Context) -> bool {
     ctx.runtime().options().output_format().is_structured()
         || ctx.runtime().options().output_envelope().is_json()
@@ -249,10 +260,14 @@ mod tests {
         RegistryApp {
             id: id.to_string(),
             name: name.to_string(),
-            project_path: PathBuf::from(format!("/projects/{id}")),
-            config_path: PathBuf::from(format!("/projects/{id}/cadman.toml")),
+            source: RegistrySource::ProjectConfig,
+            project_path: Some(PathBuf::from(format!("/projects/{id}"))),
+            config_path: Some(PathBuf::from(format!("/projects/{id}/cadman.toml"))),
             desired_status: DesiredStatus::Down,
             managed: true,
+            container_scope: None,
+            container_id: None,
+            container_name: None,
         }
     }
 

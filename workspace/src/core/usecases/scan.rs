@@ -10,7 +10,7 @@ use crate::{
             self, DiscoveredProject, ProjectDiscoveryReport, ProjectDiscoveryRequest,
             discover_project_configs,
         },
-        registry::{self, DesiredStatus, RegistryApp},
+        registry::{self, DesiredStatus, RegistryApp, RegistrySource},
     },
 };
 
@@ -148,8 +148,12 @@ fn add_discovered_projects(
         added.push(ScanAddedApp {
             id: app.id,
             name: app.name,
-            project_path: app.project_path,
-            config_path: app.config_path,
+            project_path: app
+                .project_path
+                .expect("project-config registry app has project_path"),
+            config_path: app
+                .config_path
+                .expect("project-config registry app has config_path"),
         });
     }
 
@@ -169,10 +173,14 @@ fn registry_app(project: &DiscoveredProject) -> RegistryApp {
     RegistryApp {
         id: registry::sanitize_app_id(&project.project_name),
         name: project.project_name.clone(),
-        project_path: project.root.clone(),
-        config_path: project.config_path.clone(),
+        source: RegistrySource::ProjectConfig,
+        project_path: Some(project.root.clone()),
+        config_path: Some(project.config_path.clone()),
         desired_status: DesiredStatus::Down,
         managed: true,
+        container_scope: None,
+        container_id: None,
+        container_name: None,
     }
 }
 
