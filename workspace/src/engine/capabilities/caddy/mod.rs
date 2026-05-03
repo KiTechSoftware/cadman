@@ -3,7 +3,10 @@ use crate::engine::{
     system::process::Process,
 };
 
+pub mod apply;
+pub mod reload;
 pub mod sites;
+pub mod validate;
 
 // ── Caddy passthrough wrappers ─────────────────────────────────────────────
 pub async fn run(mode: RunMode, args: Vec<String>) -> Result<()> {

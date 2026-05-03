@@ -18,7 +18,11 @@ pub async fn render(ctx: &Context) -> CoreResult<()> {
         .key_value("Registered Apps", report.registered_apps.len())
         .key_value("Updated Apps", report.updated_apps.len())
         .key_value("Auto Projects", report.auto_registered_projects.len())
-        .key_value("Missing Label Apps", report.missing_label_apps.len());
+        .key_value("Missing Label Apps", report.missing_label_apps.len())
+        .key_value("Sites Changed", report.caddy.changed)
+        .key_value("Site Actions", report.caddy.actions.len())
+        .key_value("Caddy Validate", command_status(&report.caddy.validation))
+        .key_value("Caddy Reload", command_status(&report.caddy.reload));
 
     if !report.desired_routes.is_empty() {
         output = output.table(None, routes_table(&report))
@@ -64,4 +68,16 @@ fn routes_table(report: &ReconcileReport) -> scriba::Table {
         ],
         rows,
     )
+}
+
+fn command_status(
+    status: &crate::engine::capabilities::caddy::validate::CaddyCommandStatus,
+) -> String {
+    if status.skipped {
+        "skipped".to_string()
+    } else if status.success {
+        "ok".to_string()
+    } else {
+        "failed".to_string()
+    }
 }

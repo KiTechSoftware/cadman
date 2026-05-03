@@ -53,6 +53,7 @@ pub async fn reconcile(runtime: &Runtime, request: ReconcileRequest) -> Result<R
     desired_routes.extend(project_routes);
 
     let missing_label_apps = missing_label_apps(&registry, &containers);
+    let caddy = super::caddy::apply::apply_desired_routes(runtime, &config.caddy, &desired_routes)?;
 
     Ok(ReconcileReport {
         dry_run: request.dry_run,
@@ -62,6 +63,7 @@ pub async fn reconcile(runtime: &Runtime, request: ReconcileRequest) -> Result<R
         updated_apps: label_result.updated_apps,
         auto_registered_projects,
         missing_label_apps,
+        caddy,
     })
 }
 

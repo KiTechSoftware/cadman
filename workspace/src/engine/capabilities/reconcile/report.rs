@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
-use crate::engine::registry::RegistryApp;
+use crate::engine::{capabilities::caddy::apply::CaddyApplyReport, registry::RegistryApp};
 
 use super::desired::DesiredRoute;
 
@@ -15,4 +15,5 @@ pub struct ReconcileReport {
     pub updated_apps: Vec<RegistryApp>,
     pub auto_registered_projects: Vec<RegistryApp>,
     pub missing_label_apps: Vec<String>,
+    pub caddy: CaddyApplyReport,
 }
