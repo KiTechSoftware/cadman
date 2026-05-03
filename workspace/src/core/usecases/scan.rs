@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use scriba::Output;
 use serde::Serialize;
 
 use crate::{
@@ -46,23 +45,20 @@ pub struct ScanAppSkip {
 
 pub async fn render(ctx: &Context, request: ScanRequest) -> CoreResult<()> {
     let report = scan(ctx, request)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(&report)
-    } else {
-        let output = Output::new()
-            .title("Cadman scan")
-            .key_value("Roots", format_paths(&report.discovery.scanned_roots))
-            .key_value("Projects", report.discovery.projects.len())
-            .key_value("Skipped", report.discovery.skipped.len())
-            .key_value("Added", report.added.len())
-            .key_value("App skips", report.skipped_apps.len());
+    let mut output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Cadman scan")
+        .key_value("Roots", format_paths(&report.discovery.scanned_roots))
+        .key_value("Projects", report.discovery.projects.len())
+        .key_value("Skipped", report.discovery.skipped.len())
+        .key_value("Added", report.added.len())
+        .key_value("App skips", report.skipped_apps.len());
 
-        if report.discovery.projects.is_empty() {
-            output
-        } else {
-            output.table(None, projects_table(&report.discovery.projects))
-        }
-    };
+    if !report.discovery.projects.is_empty() {
+        output = output.table(None, projects_table(&report.discovery.projects));
+    }
 
     ctx.ui().print(&output)
 }
@@ -218,11 +214,6 @@ fn format_paths(paths: &[PathBuf]) -> String {
             .collect::<Vec<_>>()
             .join(",")
     }
-}
-
-fn structured(ctx: &Context) -> bool {
-    ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
 }
 
 #[cfg(test)]

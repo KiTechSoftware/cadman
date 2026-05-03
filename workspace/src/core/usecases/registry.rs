@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use scriba::Output;
 use serde::Serialize;
 
 use crate::{
@@ -73,62 +72,57 @@ pub fn registry_remove(ctx: &Context, app: &str) -> CoreResult<RegistryRemoveRep
 
 pub async fn render_path(ctx: &Context) -> CoreResult<()> {
     let report = registry_path(ctx)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(report)
-    } else {
-        Output::new()
-            .title("Cadman registry path")
-            .key_value("Path", report.path.display())
-            .key_value("Install Scope", &report.install_scope)
-    };
+    let output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Cadman registry path")
+        .key_value("Path", report.path.display())
+        .key_value("Install Scope", &report.install_scope);
 
     ctx.ui().print(&output)
 }
 
 pub async fn render_list(ctx: &Context) -> CoreResult<()> {
     let report = registry_list(ctx)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(&report)
-    } else {
-        let output = Output::new()
-            .title("Cadman registry")
-            .key_value("Path", report.path.display())
-            .key_value("Apps", report.apps.len());
+    let mut output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Cadman registry")
+        .key_value("Path", report.path.display())
+        .key_value("Apps", report.apps.len());
 
-        if report.apps.is_empty() {
-            output
-        } else {
-            output.table(None, apps_table(&report.apps))
-        }
-    };
+    if !report.apps.is_empty() {
+        output = output.table(None, apps_table(&report.apps))
+    }
 
     ctx.ui().print(&output)
 }
 
 pub async fn render_show(ctx: &Context, app: &str) -> CoreResult<()> {
     let report = registry_show(ctx, app)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(&report)
-    } else {
-        app_output("Cadman registry app", report.path, &report.app)
-    };
+    let mut output = ctx.ui().new_output_content().json(&report);
+    output = app_output(output, "Cadman registry app", report.path, &report.app);
 
     ctx.ui().print(&output)
 }
 
 pub async fn render_remove(ctx: &Context, app: &str) -> CoreResult<()> {
     let report = registry_remove(ctx, app)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(&report)
-    } else {
-        app_output("Removed registry app", report.path, &report.removed)
-    };
+    let mut output = ctx.ui().new_output_content().json(&report);
+    output = app_output(output, "Removed registry app", report.path, &report.removed);
 
     ctx.ui().print(&output)
 }
 
-fn app_output(title: &str, path: PathBuf, app: &RegistryApp) -> Output {
-    Output::new()
+fn app_output(
+    output: scriba::Output,
+    title: &str,
+    path: PathBuf,
+    app: &RegistryApp,
+) -> scriba::Output {
+    output
         .title(title)
         .key_value("Registry", path.display())
         .key_value("ID", &app.id)
@@ -184,11 +178,6 @@ fn optional_path(path: &Option<PathBuf>) -> String {
 
 fn optional_string(value: &Option<String>) -> String {
     value.clone().unwrap_or_else(|| "-".to_string())
-}
-
-fn structured(ctx: &Context) -> bool {
-    ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
 }
 
 #[cfg(test)]

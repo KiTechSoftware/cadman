@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use scriba::Output;
 use serde::Serialize;
 
 use crate::{
@@ -51,27 +50,24 @@ pub struct AppStatus {
 
 pub async fn render(ctx: &Context, app: Option<&str>) -> CoreResult<()> {
     let report = status(ctx, app).await?;
-    let output = if structured(ctx) {
-        Output::from_serializable(&report)
-    } else {
-        let output = Output::new()
-            .title("Cadman status")
-            .key_value("Install Scope", &report.runtime.install_scope)
-            .key_value("Requested RunMode", &report.runtime.requested_mode)
-            .key_value("Effective RunMode", &report.runtime.effective_mode)
-            .key_value("Effective User", &report.runtime.effective_user)
-            .key_value("Registry", report.registry_path.display())
-            .key_value("State", report.state_path.display())
-            .key_value("Podman", report.diagnostics.podman_available)
-            .key_value("Caddy", report.diagnostics.caddy_available)
-            .key_value("Apps", report.apps.len());
+    let mut output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Cadman status")
+        .key_value("Install Scope", &report.runtime.install_scope)
+        .key_value("Requested RunMode", &report.runtime.requested_mode)
+        .key_value("Effective RunMode", &report.runtime.effective_mode)
+        .key_value("Effective User", &report.runtime.effective_user)
+        .key_value("Registry", report.registry_path.display())
+        .key_value("State", report.state_path.display())
+        .key_value("Podman", report.diagnostics.podman_available)
+        .key_value("Caddy", report.diagnostics.caddy_available)
+        .key_value("Apps", report.apps.len());
 
-        if report.apps.is_empty() {
-            output
-        } else {
-            output.table(None, apps_table(&report.apps))
-        }
-    };
+    if !report.apps.is_empty() {
+        output = output.table(None, apps_table(&report.apps));
+    }
 
     ctx.ui().print(&output)
 }
@@ -196,11 +192,6 @@ fn source_string(source: RegistrySource) -> String {
         RegistrySource::ProjectConfig => "project-config".to_string(),
         RegistrySource::PodmanLabels => "podman-labels".to_string(),
     }
-}
-
-fn structured(ctx: &Context) -> bool {
-    ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
 }
 
 #[cfg(test)]

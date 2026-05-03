@@ -56,29 +56,22 @@ pub async fn list(
 
     let report = podman::list_containers(ctx.runtime(), filter).await?;
     let ui = ctx.ui();
-    let mut output = if ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
-    {
-        scriba::Output::from_serializable(&report)
-    } else {
-        ui.new_output_content()
-            .key_value("Install Scope", &report.runtime.install_scope)
-            .key_value("Requested RunMode", &report.runtime.requested_mode)
-            .key_value("Effective RunMode", &report.runtime.effective_mode)
-            .key_value("Effective user", &report.runtime.effective_user)
-            .key_value(
-                "Authorized scopes",
-                report.runtime.authorized_scopes.join(","),
-            )
-            .key_value("Podman source", &report.runtime.podman_source)
-    };
+    let mut output = ui
+        .new_output_content()
+        .json(&report)
+        .key_value("Install Scope", &report.runtime.install_scope)
+        .key_value("Requested RunMode", &report.runtime.requested_mode)
+        .key_value("Effective RunMode", &report.runtime.effective_mode)
+        .key_value("Effective user", &report.runtime.effective_user)
+        .key_value(
+            "Authorized scopes",
+            report.runtime.authorized_scopes.join(","),
+        )
+        .key_value("Podman source", &report.runtime.podman_source);
 
-    if !ctx.runtime().options().output_format().is_structured()
-        && !ctx.runtime().options().output_envelope().is_json()
-    {
-        let terminal_size = TerminalSize::current();
-        output = output.table(None, container_table(&report, labels, terminal_size));
-    }
+    let terminal_size = TerminalSize::current();
+    output = output.table(None, container_table(&report, labels, terminal_size));
+
     ctx.ui().print(&output)
 }
 

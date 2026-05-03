@@ -2,7 +2,7 @@ use clap::Args as ClapArgs;
 
 use crate::{
     cli::CliResult,
-    core::{app::reconcile, context::Context},
+    core::{context::Context, usecases::reconcile},
 };
 
 #[derive(Debug, Clone, ClapArgs)]
@@ -10,5 +10,5 @@ use crate::{
 pub struct Args {}
 
 pub async fn run(ctx: &Context, _args: Args) -> CliResult<()> {
-    reconcile::run_and_print(ctx).await
+    reconcile::render(ctx).await
 }

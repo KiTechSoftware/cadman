@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use scriba::Output;
 use serde::Serialize;
 
 use crate::{
@@ -70,19 +69,16 @@ fn render_report(ctx: &Context, report: &InitReport) -> CoreResult<()> {
         "Created Cadman project config"
     };
 
-    let output = if ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
-    {
-        Output::from_serializable(report)
-    } else {
-        Output::new()
-            .title(title)
-            .key_value("Project", &report.project_name)
-            .key_value("Directory", report.directory.display())
-            .key_value("Config", report.config_path.display())
-            .key_value("Format", &report.format)
-            .key_value("Overwritten", report.overwritten)
-    };
+    let output = ctx
+        .ui()
+        .new_output_content()
+        .json(report)
+        .title(title)
+        .key_value("Project", &report.project_name)
+        .key_value("Directory", report.directory.display())
+        .key_value("Config", report.config_path.display())
+        .key_value("Format", &report.format)
+        .key_value("Overwritten", report.overwritten);
 
     ctx.ui().print(&output)
 }

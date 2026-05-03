@@ -103,6 +103,8 @@ pub enum Command {
     Registry(cmd::registry::Args),
     /// Remove an app from the Cadman registry
     Remove(cmd::remove::Args),
+    /// Discover Podman services and collect desired Caddy routes
+    Reconcile(cmd::reconcile::Args),
     /// Scan for Cadman project configs
     Scan(cmd::scan::Args),
     /// Show Cadman runtime, registry, state, and app status

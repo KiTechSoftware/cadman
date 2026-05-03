@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use scriba::Output;
 use serde::Serialize;
 
 use crate::{
@@ -124,33 +123,31 @@ fn registry_app_from_project(
 }
 
 fn render_add(ctx: &Context, report: &AddReport) -> CoreResult<()> {
-    let output = if structured(ctx) {
-        Output::from_serializable(report)
-    } else {
-        Output::new()
-            .title("Added Cadman app")
-            .key_value("ID", &report.id)
-            .key_value("Name", &report.name)
-            .key_value("Project", report.project_path.display())
-            .key_value("Config", report.config_path.display())
-            .key_value("Registry", report.registry_path.display())
-            .key_value("Desired", &report.desired_status)
-            .key_value("Managed", report.managed)
-    };
+    let output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Added Cadman app")
+        .key_value("ID", &report.id)
+        .key_value("Name", &report.name)
+        .key_value("Project", report.project_path.display())
+        .key_value("Config", report.config_path.display())
+        .key_value("Registry", report.registry_path.display())
+        .key_value("Desired", &report.desired_status)
+        .key_value("Managed", report.managed);
 
     ctx.ui().print(&output)
 }
 
 fn render_remove(ctx: &Context, report: &RemoveReport) -> CoreResult<()> {
-    let output = if structured(ctx) {
-        Output::from_serializable(report)
-    } else {
-        Output::new()
-            .title("Removed Cadman app")
-            .key_value("ID", &report.id)
-            .key_value("Name", &report.name)
-            .key_value("Registry", report.registry_path.display())
-    };
+    let output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Removed Cadman app")
+        .key_value("ID", &report.id)
+        .key_value("Name", &report.name)
+        .key_value("Registry", report.registry_path.display());
 
     ctx.ui().print(&output)
 }
@@ -160,11 +157,6 @@ fn desired_status_string(status: DesiredStatus) -> String {
         DesiredStatus::Up => "up".to_string(),
         DesiredStatus::Down => "down".to_string(),
     }
-}
-
-fn structured(ctx: &Context) -> bool {
-    ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
 }
 
 #[cfg(test)]

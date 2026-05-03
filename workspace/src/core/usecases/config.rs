@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use scriba::Output;
 use serde::Serialize;
 
 use crate::{
@@ -80,51 +79,49 @@ pub fn config_init(ctx: &Context) -> CoreResult<ConfigInitReport> {
 
 pub async fn render_path(ctx: &Context) -> CoreResult<()> {
     let report = config_path(ctx)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(report)
-    } else {
-        Output::new()
-            .title("Cadman config path")
-            .key_value("Path", report.path.display())
-            .key_value("Install Scope", &report.install_scope)
-    };
+    let output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Cadman config path")
+        .key_value("Path", report.path.display())
+        .key_value("Install Scope", &report.install_scope);
 
     ctx.ui().print(&output)
 }
 
 pub async fn render_show(ctx: &Context) -> CoreResult<()> {
     let report = config_show(ctx)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(report)
-    } else {
-        Output::new()
-            .title("Cadman config")
-            .key_value("Path", report.path.display())
-            .key_value("Exists", report.exists)
-            .key_value("Caddy mode", format!("{:?}", report.config.caddy.mode))
-            .key_value("Caddy config dir", report.config.caddy.config_dir.display())
-            .key_value("Caddy sites dir", report.config.caddy.sites_dir.display())
-            .key_value("Podman CLI fallback", report.config.podman.use_cli_fallback)
-            .key_value("Poll interval", report.config.runtime.poll_interval_secs)
-            .key_value("Log level", &report.config.logging.level)
-            .key_value(
-                "Discovery roots",
-                format_paths(&report.config.discovery.roots),
-            )
-            .key_value("Discovery max depth", report.config.discovery.max_depth)
-            .key_value(
-                "Discovery follow symlinks",
-                report.config.discovery.follow_symlinks,
-            )
-            .key_value(
-                "Discovery include hidden",
-                report.config.discovery.include_hidden,
-            )
-            .key_value(
-                "Discovery auto register",
-                report.config.discovery.auto_register,
-            )
-    };
+    let output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Cadman config")
+        .key_value("Path", report.path.display())
+        .key_value("Exists", report.exists)
+        .key_value("Caddy mode", format!("{:?}", report.config.caddy.mode))
+        .key_value("Caddy config dir", report.config.caddy.config_dir.display())
+        .key_value("Caddy sites dir", report.config.caddy.sites_dir.display())
+        .key_value("Podman CLI fallback", report.config.podman.use_cli_fallback)
+        .key_value("Poll interval", report.config.runtime.poll_interval_secs)
+        .key_value("Log level", &report.config.logging.level)
+        .key_value(
+            "Discovery roots",
+            format_paths(&report.config.discovery.roots),
+        )
+        .key_value("Discovery max depth", report.config.discovery.max_depth)
+        .key_value(
+            "Discovery follow symlinks",
+            report.config.discovery.follow_symlinks,
+        )
+        .key_value(
+            "Discovery include hidden",
+            report.config.discovery.include_hidden,
+        )
+        .key_value(
+            "Discovery auto register",
+            report.config.discovery.auto_register,
+        );
 
     ctx.ui().print(&output)
 }
@@ -137,22 +134,16 @@ pub async fn render_init(ctx: &Context) -> CoreResult<()> {
         "Created Cadman config"
     };
 
-    let output = if structured(ctx) {
-        Output::from_serializable(report)
-    } else {
-        Output::new()
-            .title(title)
-            .key_value("Path", report.path.display())
-            .key_value("Created", report.created)
-            .key_value("Overwritten", report.overwritten)
-    };
+    let output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title(title)
+        .key_value("Path", report.path.display())
+        .key_value("Created", report.created)
+        .key_value("Overwritten", report.overwritten);
 
     ctx.ui().print(&output)
-}
-
-fn structured(ctx: &Context) -> bool {
-    ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
 }
 
 fn format_paths(paths: &[PathBuf]) -> String {

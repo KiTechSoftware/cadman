@@ -1,4 +1,3 @@
-use scriba::Output;
 use serde::Serialize;
 
 use crate::{
@@ -16,40 +15,37 @@ pub struct DoctorReport {
 
 pub async fn render(ctx: &Context) -> CoreResult<()> {
     let report = doctor(ctx)?;
-    let output = if structured(ctx) {
-        Output::from_serializable(&report)
-    } else {
-        let output = Output::new()
-            .title("Cadman doctor")
-            .key_value("OK", report.ok)
-            .key_value("Podman", report.diagnostics.podman_available)
-            .key_value("Caddy", report.diagnostics.caddy_available)
-            .key_value("systemd", report.diagnostics.systemd_available)
-            .key_value("Cadman user", report.diagnostics.cadman_user_exists)
-            .key_value("Cadman group", report.diagnostics.cadman_group_exists)
-            .key_value(
-                "User in cadman group",
-                report.diagnostics.current_user_in_cadman_group,
-            )
-            .key_value(
-                "User in admin group",
-                report.diagnostics.current_user_in_admin_group,
-            )
-            .key_value("Install Scope", &report.diagnostics.install_scope)
-            .key_value("Effective User", &report.diagnostics.effective_user)
-            .key_value("Config", report.diagnostics.config_path.display())
-            .key_value("Registry", report.diagnostics.registry_path.display())
-            .key_value("State", report.diagnostics.state_path.display());
+    let mut output = ctx
+        .ui()
+        .new_output_content()
+        .json(&report)
+        .title("Cadman doctor")
+        .key_value("OK", report.ok)
+        .key_value("Podman", report.diagnostics.podman_available)
+        .key_value("Caddy", report.diagnostics.caddy_available)
+        .key_value("systemd", report.diagnostics.systemd_available)
+        .key_value("Cadman user", report.diagnostics.cadman_user_exists)
+        .key_value("Cadman group", report.diagnostics.cadman_group_exists)
+        .key_value(
+            "User in cadman group",
+            report.diagnostics.current_user_in_cadman_group,
+        )
+        .key_value(
+            "User in admin group",
+            report.diagnostics.current_user_in_admin_group,
+        )
+        .key_value("Install Scope", &report.diagnostics.install_scope)
+        .key_value("Effective User", &report.diagnostics.effective_user)
+        .key_value("Config", report.diagnostics.config_path.display())
+        .key_value("Registry", report.diagnostics.registry_path.display())
+        .key_value("State", report.diagnostics.state_path.display());
 
-        if report.warnings.is_empty() && report.errors.is_empty() {
-            output
-        } else {
-            output
-                .key_value("Warnings", format_messages(&report.warnings))
-                .key_value("Errors", format_messages(&report.errors))
-        }
-    };
-
+    if report.warnings.is_empty() {
+        output = output.key_value("Warnings", format_messages(&report.warnings))
+    }
+    if report.errors.is_empty() {
+        output = output.key_value("Errors", format_messages(&report.errors))
+    }
     ctx.ui().print(&output)
 }
 
@@ -90,11 +86,6 @@ fn report_from_diagnostics(diagnostics: DiagnosticsReport) -> DoctorReport {
         warnings,
         errors,
     }
-}
-
-fn structured(ctx: &Context) -> bool {
-    ctx.runtime().options().output_format().is_structured()
-        || ctx.runtime().options().output_envelope().is_json()
 }
 
 fn format_messages(messages: &[String]) -> String {
