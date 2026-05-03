@@ -5,7 +5,7 @@ use veltrix::os::unistd;
 
 use crate::engine::{
     Result,
-    constants::{CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME, CADDY_SERVICE_NAME},
+    constants::{CADDY_SERVICE_NAME, CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME},
     models::runtime::Runtime,
     system::install::package::binary_exists,
 };

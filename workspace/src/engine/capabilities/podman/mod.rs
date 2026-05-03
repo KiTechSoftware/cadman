@@ -99,7 +99,9 @@ async fn list_containers_for_scope(scope: ContainerScope) -> Result<Vec<PodmanCo
 
 // ── Podman passthrough wrappers ─────────────────────────────────────────────
 pub async fn run(mode: RunMode, args: Vec<String>) -> Result<()> {
-    let proc = Process::new(PODMAN_SERVICE_NAME).set_args(args).set_mode(mode);
+    let proc = Process::new(PODMAN_SERVICE_NAME)
+        .set_args(args)
+        .set_mode(mode);
 
     if !proc.binary_exists() {
         return Err(ErrorCode::PodmanMissing

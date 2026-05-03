@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use crate::engine::{Result, constants::{SYSTEM_UNIT_NAME, paths}};
+use crate::engine::{
+    Result,
+    constants::{SYSTEM_UNIT_NAME, paths},
+};
 
 pub fn system_unit_path() -> PathBuf {
     paths::systemd_unit_path()

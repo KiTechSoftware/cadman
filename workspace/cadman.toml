@@ -1,0 +1,30 @@
+[project]
+name = "workspace"
+description = "Cadman managed project"
+
+[containers.api]
+image = "docker.io/library/httpd:alpine"
+ports = ["127.0.0.1:8081:80"]
+volumes = ["./api-data:/usr/local/apache2/htdocs:Z"]
+restart = "unless-stopped"
+
+[containers.web]
+image = "docker.io/library/nginx:alpine"
+ports = ["127.0.0.1:8080:80"]
+volumes = ["./public:/usr/share/nginx/html:Z"]
+restart = "unless-stopped"
+
+[routes.api]
+hosts = ["api.workspace.local"]
+container = "api"
+upstream_port = 80
+tls = false
+
+[routes.web]
+hosts = [
+    "workspace.local",
+    "www.workspace.local",
+]
+container = "web"
+upstream_port = 80
+tls = false

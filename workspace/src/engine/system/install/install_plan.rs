@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use crate::engine::{
     ErrorCode, Result,
-    constants::{BIN_NAME, CADDY_SERVICE_NAME, CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME, paths},
+    constants::{
+        CADDY_SERVICE_NAME, CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME,
+        paths,
+    },
     models::runtime::RunMode,
 };
 
@@ -299,9 +302,9 @@ fn set_owner(path: PathBuf, owner: &str, group: &str) -> InstallStep {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::constants::BIN_NAME;
     use crate::engine::models::runtime::InstallScope;
     use crate::engine::system::install::package::PackageManager;
-    use crate::engine::constants::BIN_NAME;
 
     fn facts(scope: InstallScope) -> InstallFacts {
         InstallFacts {
