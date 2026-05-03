@@ -7,5 +7,6 @@ pub mod reconcile;
 pub mod registry;
 pub mod remove;
 pub mod scan;
+pub mod lifecycle;
 pub mod status;
 pub mod wrappers;

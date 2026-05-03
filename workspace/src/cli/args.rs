@@ -107,6 +107,9 @@ pub enum Command {
     Reconcile(cmd::reconcile::Args),
     /// Scan for Cadman project configs
     Scan(cmd::scan::Args),
+    /// Install, update, uninstall, and check Cadman itself
+    #[command(name = "self")]
+    Lifecycle(cmd::lifecycle::Args),
     /// Show Cadman runtime, registry, state, and app status
     Status(cmd::status::Args),
     /// Run Caddy through Cadman

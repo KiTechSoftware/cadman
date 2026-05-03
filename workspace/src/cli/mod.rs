@@ -66,6 +66,7 @@ async fn async_run() -> ExitCode {
         args::Command::Remove(args) => cmd::remove::run(&ctx, args).await,
         args::Command::Reconcile(args) => cmd::reconcile::run(&ctx, args).await,
         args::Command::Scan(args) => cmd::scan::run(&ctx, args).await,
+        args::Command::Lifecycle(args) => cmd::lifecycle::run(&ctx, args).await,
         args::Command::Status(args) => cmd::status::run(&ctx, args).await,
     };
 

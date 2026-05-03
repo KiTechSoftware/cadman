@@ -6,5 +6,6 @@ pub mod init;
 pub mod reconcile;
 pub mod registry;
 pub mod scan;
+pub mod self_cmd;
 pub mod status;
 pub mod wrappers;
