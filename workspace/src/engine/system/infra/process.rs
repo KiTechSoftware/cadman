@@ -8,7 +8,9 @@ use veltrix::os::{
     unistd::{self, Uid},
 };
 
-use crate::engine::{Error, ErrorCode, Result, constants::CADMAN_USER_NAME, models::runtime::RunMode};
+use crate::engine::{
+    Error, ErrorCode, Result, constants::CADMAN_USER_NAME, models::runtime::RunMode,
+};
 pub struct Process {
     mode: RunMode,
     cwd: Option<PathBuf>,
@@ -73,9 +75,8 @@ impl Process {
     pub fn run(&self) -> Result<ProcessOutput> {
         let output = std_cmd::run(self.spec.clone());
         if output.is_err() {
-            return Err(ErrorCode::IoFailure
-        .error()
-        .with_context("error",
+            return Err(ErrorCode::IoFailure.error().with_context(
+                "error",
                 format!("failed to execute process: {}", output.err().unwrap()),
             ));
         }
@@ -85,9 +86,10 @@ impl Process {
     pub async fn run_async(&self) -> Result<ProcessOutput> {
         let output = async_cmd::run(self.spec.clone()).await;
         if output.is_err() {
-            return Err(ErrorCode::IoFailure
-        .error()
-        .with_context("error", format!("failed to execute process: {}", output.err().unwrap())));
+            return Err(ErrorCode::IoFailure.error().with_context(
+                "error",
+                format!("failed to execute process: {}", output.err().unwrap()),
+            ));
         }
         self.convert(output.unwrap())
     }
@@ -209,11 +211,7 @@ fn check_user(mode: RunMode) -> User {
             }
         }
     }
-    User {
-        use_sudo,
-        uid,
-        gid,
-    }
+    User { use_sudo, uid, gid }
 }
 
 pub struct User {

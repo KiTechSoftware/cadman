@@ -11,6 +11,7 @@ pub use labels::*;
 pub use paths::*;
 
 pub const APP_NAME: &str = "cadman";
+pub const APP_ABOUT: &str = "👷‍♂️ Cadman";
 pub const BIN_NAME: &str = APP_NAME;
 
 pub const CONFIG_FILE_NAME: &str = "config.toml";

@@ -1,8 +1,11 @@
-mod errors;
 pub mod args;
 pub mod cmd;
+mod errors;
 
-use crate::{core::{bootstrap::build_app_context, exit_code, report_error}, engine::ErrorCode};
+use crate::{
+    core::{bootstrap::build_app_context, exit_code, report_error},
+    engine::ErrorCode,
+};
 use clap::Parser;
 use std::process::ExitCode;
 

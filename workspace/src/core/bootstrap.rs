@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use crate::{
     core::context::Context,
-    engine::{Result, models::runtime::{InteractiveMode, RunMode, Runtime}},
+    engine::{
+        Result,
+        models::runtime::{InteractiveMode, RunMode, Runtime},
+    },
 };
 
 /// All inputs needed to build an application context from CLI arguments.

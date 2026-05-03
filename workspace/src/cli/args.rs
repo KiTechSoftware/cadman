@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{cli::cmd, core::bootstrap::AppContextArgs};
+use crate::{cli::cmd, core::bootstrap::AppContextArgs, engine::constants::{APP_ABOUT, APP_NAME}};
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -64,10 +64,10 @@ impl std::fmt::Display for UserMode {
 /// Cadman
 #[derive(Parser, Debug)]
 #[command(
-    name = "cadman",
+    name = APP_NAME,
     version,
     author,
-    about = "👷‍♂️ Cadman",
+    about = APP_ABOUT,
     propagate_version = true,
     arg_required_else_help = true
 )]

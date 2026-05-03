@@ -4,7 +4,7 @@ mod logger;
 mod prompt;
 
 use crate::engine::{Error, ErrorCode};
-use scriba::{envelope, output::render, Config, Format, Logger, Meta, Output};
+use scriba::{Config, Format, Logger, Meta, Output, envelope, output::render};
 pub type UiResult<T> = Result<T, Error>;
 
 // Thread-local cache for the current Ui instance
