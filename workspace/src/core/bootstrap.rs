@@ -22,7 +22,7 @@ pub struct AppContextArgs {
     pub auto_yes: bool,
     pub force: bool,
     pub config_path: Option<PathBuf>,
-    pub run_mode: String,
+    pub run_mode: Option<String>,
 }
 
 pub fn build_app_context(args: AppContextArgs) -> Result<Context> {
@@ -47,7 +47,6 @@ pub fn build_app_context(args: AppContextArgs) -> Result<Context> {
     let mut runtime = Runtime::new();
 
     runtime
-        .set_run_mode(RunMode::parse(&args.run_mode))
         .set_interactive_mode(imode)
         .set_cwd(args.cwd)
         .set_config_path(args.config_path)
@@ -59,6 +58,10 @@ pub fn build_app_context(args: AppContextArgs) -> Result<Context> {
         .set_output_format(scriba::Format::from_str(&args.format))
         .set_output_color(output_color)
         .set_log_level(scriba::Level::from_flags(args.verbose, args.quiet));
+
+    if let Some(run_mode) = args.run_mode {
+        runtime.set_run_mode(RunMode::parse(&run_mode));
+    }
 
     let ctx = Context::new(runtime);
 

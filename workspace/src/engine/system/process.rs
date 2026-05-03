@@ -15,6 +15,7 @@ pub struct Process {
     mode: RunMode,
     cwd: Option<PathBuf>,
     spec: CmdSpec,
+    mode_error: Option<ErrorCode>,
 }
 
 impl Default for Process {
@@ -28,6 +29,7 @@ impl Process {
             mode: RunMode::Current,
             cwd: None,
             spec: CmdSpec::new(binary),
+            mode_error: None,
         }
     }
 
@@ -73,6 +75,7 @@ impl Process {
     }
 
     pub fn run(&self) -> Result<ProcessOutput> {
+        self.validate_mode()?;
         let output = std_cmd::run(self.spec.clone());
         if output.is_err() {
             return Err(ErrorCode::IoFailure.error().with_context(
@@ -84,6 +87,7 @@ impl Process {
     }
 
     pub async fn run_async(&self) -> Result<ProcessOutput> {
+        self.validate_mode()?;
         let output = async_cmd::run(self.spec.clone()).await;
         if output.is_err() {
             return Err(ErrorCode::IoFailure.error().with_context(
@@ -121,16 +125,35 @@ impl Process {
     }
 
     fn determine_user(&mut self) {
-        let user = check_user(self.mode);
-        if user.use_sudo {
-            self.spec.sudo = true;
+        match check_user(self.mode) {
+            Ok(user) => {
+                self.mode_error = None;
+                self.spec.sudo = false;
+                if let Some(uid) = user.uid {
+                    self.spec.uid = Some(uid);
+                }
+                if let Some(gid) = user.gid {
+                    self.spec.gid = Some(gid);
+                }
+            }
+            Err(code) => {
+                self.mode_error = Some(code);
+            }
         }
-        if let Some(uid) = user.uid {
-            self.spec.uid = Some(uid);
+    }
+
+    fn validate_mode(&self) -> Result<()> {
+        if let Some(code) = self.mode_error {
+            return Err(code
+                .error()
+                .with_context("mode", self.mode.as_str())
+                .with_context(
+                    "reason",
+                    "requested run mode is not available without escalation",
+                ));
         }
-        if let Some(gid) = user.gid {
-            self.spec.gid = Some(gid);
-        }
+
+        Ok(())
     }
 }
 
@@ -178,8 +201,7 @@ impl ProcessOutput {
     }
 }
 
-fn check_user(mode: RunMode) -> User {
-    let mut use_sudo = false;
+fn check_user(mode: RunMode) -> std::result::Result<User, ErrorCode> {
     let mut uid = None;
     let gid = None;
 
@@ -195,27 +217,65 @@ fn check_user(mode: RunMode) -> User {
         }
 
         RunMode::Cadman => {
-            // If already cadman, don't sudo.
             if cadman_uid.is_some_and(|uid| current_uid == uid) {
                 uid = cadman_uid.map(|u| u.as_raw());
             } else {
-                use_sudo = true;
-                uid = cadman_uid.map(|u| u.as_raw());
+                return Err(ErrorCode::PermissionModeDenied);
             }
         }
 
         RunMode::Root => {
-            // If already root, don't sudo.
             if current_uid != Uid::from_raw(0) {
-                use_sudo = true;
+                return Err(ErrorCode::PermissionRootRequired);
             }
         }
     }
-    User { use_sudo, uid, gid }
+    Ok(User { uid, gid })
 }
 
 pub struct User {
-    pub use_sudo: bool,
     pub uid: Option<u32>,
     pub gid: Option<u32>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn current_run_mode_does_not_request_sudo() {
+        let process = Process::new("cadman").set_mode(RunMode::Current);
+
+        assert!(!process.spec.sudo);
+        assert!(process.mode_error.is_none());
+    }
+
+    #[test]
+    fn root_run_mode_without_effective_root_returns_permission_root_required() {
+        if unistd::geteuid() == Uid::from_raw(0) {
+            return;
+        }
+
+        let err = Process::new("cadman")
+            .set_mode(RunMode::Root)
+            .validate_mode()
+            .unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::PermissionRootRequired);
+    }
+
+    #[test]
+    fn cadman_run_mode_when_not_cadman_returns_permission_mode_denied() {
+        let cadman_uid = unistd::uid_by_username(CADMAN_USER_NAME);
+        if cadman_uid.is_some_and(|uid| unistd::geteuid() == uid) {
+            return;
+        }
+
+        let err = Process::new("cadman")
+            .set_mode(RunMode::Cadman)
+            .validate_mode()
+            .unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::PermissionModeDenied);
+    }
 }

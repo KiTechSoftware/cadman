@@ -220,7 +220,7 @@ pub fn load_project_config(path: &Path) -> Result<ProjectConfig> {
     })?;
 
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-    match ext {
+    let config = match ext {
         "toml" => toml::from_str(&raw).map_err(|err| {
             ErrorCode::ConfigInvalid
                 .error()
@@ -237,7 +237,118 @@ pub fn load_project_config(path: &Path) -> Result<ProjectConfig> {
             .error()
             .with_context("extension", other)
             .with_context("path", path.display().to_string())),
+    }?;
+
+    validate_project_config(&config)?;
+    Ok(config)
+}
+
+pub fn validate_project_config(config: &ProjectConfig) -> Result<()> {
+    if config.project.name.trim().is_empty() {
+        return Err(ErrorCode::ValidationProjectInvalid
+            .error()
+            .with_context("field", "project.name")
+            .with_context("reason", "project name must not be empty"));
     }
+
+    if config.containers.is_empty() {
+        return Err(ErrorCode::ValidationProjectInvalid
+            .error()
+            .with_context("field", "containers")
+            .with_context("reason", "at least one container must exist"));
+    }
+
+    for (container_name, container) in &config.containers {
+        if container_name.trim().is_empty() {
+            return Err(ErrorCode::ValidationProjectInvalid
+                .error()
+                .with_context("field", "containers")
+                .with_context("reason", "container key must not be empty"));
+        }
+
+        if container.image.trim().is_empty() {
+            return Err(ErrorCode::ValidationProjectInvalid
+                .error()
+                .with_context("container", container_name)
+                .with_context("field", "image")
+                .with_context("reason", "container image must not be empty"));
+        }
+
+        for port in &container.ports {
+            if port.trim().is_empty() {
+                return Err(ErrorCode::ValidationPortInvalid
+                    .error()
+                    .with_context("container", container_name)
+                    .with_context("field", "ports")
+                    .with_context("reason", "container port mapping must not be empty"));
+            }
+        }
+
+        for volume in &container.volumes {
+            if volume.trim().is_empty() {
+                return Err(ErrorCode::ValidationProjectInvalid
+                    .error()
+                    .with_context("container", container_name)
+                    .with_context("field", "volumes")
+                    .with_context("reason", "volume mapping must not be empty"));
+            }
+        }
+
+        for env_file in &container.env_file {
+            if env_file.as_os_str().is_empty() {
+                return Err(ErrorCode::ValidationProjectInvalid
+                    .error()
+                    .with_context("container", container_name)
+                    .with_context("field", "env_file")
+                    .with_context("reason", "env file path must not be empty"));
+            }
+        }
+    }
+
+    for (route_name, route) in &config.routes {
+        if route_name.trim().is_empty() {
+            return Err(ErrorCode::ValidationRouteInvalid
+                .error()
+                .with_context("field", "routes")
+                .with_context("reason", "route key must not be empty"));
+        }
+
+        if route.hosts.is_empty() {
+            return Err(ErrorCode::ValidationRouteInvalid
+                .error()
+                .with_context("route", route_name)
+                .with_context("field", "hosts")
+                .with_context("reason", "route must have at least one host"));
+        }
+
+        for host in &route.hosts {
+            if host.trim().is_empty() {
+                return Err(ErrorCode::ValidationRouteInvalid
+                    .error()
+                    .with_context("route", route_name)
+                    .with_context("field", "hosts")
+                    .with_context("reason", "route host must not be empty"));
+            }
+        }
+
+        if !config.containers.contains_key(&route.container) {
+            return Err(ErrorCode::ValidationRouteInvalid
+                .error()
+                .with_context("route", route_name)
+                .with_context("field", "container")
+                .with_context("reason", "route references an unknown container"));
+        }
+
+        if route.upstream_port == 0 {
+            return Err(ErrorCode::ValidationRouteInvalid
+                .error()
+                .with_context("route", route_name)
+                .with_context("field", "upstream_port")
+                .with_context("reason", "route upstream port must be greater than 0"));
+        }
+    }
+
+    Ok(())
 }
 
 /// Write a default project config to `dir`.
@@ -315,6 +426,121 @@ mod tests {
         assert!(raw.contains("[routes.web]"));
 
         let _ = std_fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn default_project_config_is_valid() {
+        validate_project_config(&default_project_config("my-app")).unwrap();
+    }
+
+    #[test]
+    fn empty_project_name_fails() {
+        let mut config = default_project_config("my-app");
+        config.project.name.clear();
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationProjectInvalid);
+    }
+
+    #[test]
+    fn no_containers_fails() {
+        let mut config = default_project_config("my-app");
+        config.containers.clear();
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationProjectInvalid);
+    }
+
+    #[test]
+    fn container_with_empty_image_fails() {
+        let mut config = default_project_config("my-app");
+        config.containers.get_mut("web").unwrap().image.clear();
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationProjectInvalid);
+    }
+
+    #[test]
+    fn route_with_no_hosts_fails() {
+        let mut config = default_project_config("my-app");
+        config.routes.get_mut("web").unwrap().hosts.clear();
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationRouteInvalid);
+    }
+
+    #[test]
+    fn route_with_empty_host_fails() {
+        let mut config = default_project_config("my-app");
+        config
+            .routes
+            .get_mut("web")
+            .unwrap()
+            .hosts
+            .push(" ".to_string());
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationRouteInvalid);
+    }
+
+    #[test]
+    fn route_referencing_missing_container_fails() {
+        let mut config = default_project_config("my-app");
+        config.routes.get_mut("web").unwrap().container = "missing".to_string();
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationRouteInvalid);
+    }
+
+    #[test]
+    fn route_with_zero_upstream_port_fails() {
+        let mut config = default_project_config("my-app");
+        config.routes.get_mut("web").unwrap().upstream_port = 0;
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationRouteInvalid);
+    }
+
+    #[test]
+    fn empty_port_mapping_fails() {
+        let mut config = default_project_config("my-app");
+        config
+            .containers
+            .get_mut("web")
+            .unwrap()
+            .ports
+            .push(" ".to_string());
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationPortInvalid);
+    }
+
+    #[test]
+    fn empty_volume_mapping_fails() {
+        let mut config = default_project_config("my-app");
+        config
+            .containers
+            .get_mut("web")
+            .unwrap()
+            .volumes
+            .push(" ".to_string());
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationProjectInvalid);
+    }
+
+    #[test]
+    fn empty_env_file_path_fails() {
+        let mut config = default_project_config("my-app");
+        config
+            .containers
+            .get_mut("web")
+            .unwrap()
+            .env_file
+            .push(PathBuf::new());
+
+        let err = validate_project_config(&config).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationProjectInvalid);
     }
 
     #[test]
@@ -402,6 +628,64 @@ mod tests {
         );
         assert!(config.containers.contains_key("api"));
         assert_eq!(config.routes["api"].container, "api");
+
+        let _ = std_fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn load_project_config_validates_toml() {
+        let dir = test_dir("load_invalid_toml");
+        std_fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(PROJECT_CONFIG_FILE_NAME);
+        std_fs::write(
+            &path,
+            r#"
+[project]
+name = ""
+
+[containers.web]
+image = "docker.io/library/nginx:alpine"
+
+[routes.web]
+hosts = ["my-app.local"]
+container = "web"
+upstream_port = 80
+tls = false
+"#,
+        )
+        .unwrap();
+
+        let err = load_project_config(&path).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationProjectInvalid);
+
+        let _ = std_fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn load_project_config_validates_yaml() {
+        let dir = test_dir("load_invalid_yaml");
+        std_fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(PROJECT_CONFIG_FILE_NAME_YAML);
+        std_fs::write(
+            &path,
+            r#"
+project:
+  name: my-app
+containers:
+  web:
+    image: docker.io/library/nginx:alpine
+routes:
+  web:
+    hosts: []
+    container: web
+    upstream_port: 80
+    tls: false
+"#,
+        )
+        .unwrap();
+
+        let err = load_project_config(&path).unwrap_err();
+        assert_eq!(err.code, ErrorCode::ValidationRouteInvalid);
 
         let _ = std_fs::remove_dir_all(&dir);
     }

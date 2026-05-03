@@ -16,6 +16,22 @@ impl Default for InstallScope {
     }
 }
 
+impl InstallScope {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::User => "user",
+            Self::System => "system",
+            Self::Container => "container",
+        }
+    }
+}
+
+impl std::fmt::Display for InstallScope {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct InstallScopeFacts {
     pub current_exe: PathBuf,

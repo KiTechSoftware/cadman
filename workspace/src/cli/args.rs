@@ -139,8 +139,8 @@ pub struct GlobalArgs {
     #[arg(long, global = true)]
     pub config: Option<PathBuf>,
     /// Run mode (current, cadman, root)
-    #[arg(long, value_enum, default_value_t = UserMode::Current, global = true)]
-    pub mode: UserMode,
+    #[arg(long, value_enum, global = true)]
+    pub mode: Option<UserMode>,
 }
 
 impl From<GlobalArgs> for AppContextArgs {
@@ -162,7 +162,7 @@ impl From<GlobalArgs> for AppContextArgs {
             auto_yes: args.yes,
             force: args.force,
             config_path: args.config,
-            run_mode: args.mode.to_string(),
+            run_mode: args.mode.map(|mode| mode.to_string()),
         }
     }
 }

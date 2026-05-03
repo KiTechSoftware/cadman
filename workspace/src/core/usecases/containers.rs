@@ -24,7 +24,7 @@ impl ContainerListOptions {
             .count();
 
         if selected > 1 {
-            return Err(ErrorCode::ValidationFailed.error().with_context(
+            return Err(ErrorCode::UserInvalidArgument.error().with_context(
                 "flags",
                 "--all, --running, and --stopped are mutually exclusive",
             ));
@@ -56,15 +56,29 @@ pub async fn list(
 
     let report = podman::list_containers(ctx.runtime(), filter).await?;
     let ui = ctx.ui();
-    let mut output = ui
-        .new_output_content()
-        .key_value("Requested RunMode", &report.runtime.requested_mode)
-        .key_value("Effective RunMode", &report.runtime.effective_mode)
-        .key_value("Effective user", &report.runtime.effective_user)
-        .key_value("Podman source", &report.runtime.podman_source);
+    let mut output = if ctx.runtime().options().output_format().is_structured()
+        || ctx.runtime().options().output_envelope().is_json()
+    {
+        scriba::Output::from_serializable(&report)
+    } else {
+        ui.new_output_content()
+            .key_value("Install Scope", &report.runtime.install_scope)
+            .key_value("Requested RunMode", &report.runtime.requested_mode)
+            .key_value("Effective RunMode", &report.runtime.effective_mode)
+            .key_value("Effective user", &report.runtime.effective_user)
+            .key_value(
+                "Authorized scopes",
+                report.runtime.authorized_scopes.join(","),
+            )
+            .key_value("Podman source", &report.runtime.podman_source)
+    };
 
-    let terminal_size = TerminalSize::current();
-    output = output.table(None, container_table(&report, labels, terminal_size));
+    if !ctx.runtime().options().output_format().is_structured()
+        && !ctx.runtime().options().output_envelope().is_json()
+    {
+        let terminal_size = TerminalSize::current();
+        output = output.table(None, container_table(&report, labels, terminal_size));
+    }
     ctx.ui().print(&output)
 }
 
@@ -76,6 +90,7 @@ fn container_table(
     let layout = terminal_size.table_layout();
 
     let mut headers = vec![
+        "SCOPE".to_string(),
         "NAME".to_string(),
         "ID".to_string(),
         "IMAGE".to_string(),
@@ -93,6 +108,7 @@ fn container_table(
         .iter()
         .map(|container| {
             let mut row = vec![
+                container.scope.to_string(),
                 text_or_dash(&container.name),
                 short_id(&container.id),
                 text_or_dash(&container.image),
@@ -158,4 +174,48 @@ fn format_labels(container: &ContainerSummary) -> String {
         .map(|(key, value)| format!("{key}={value}"))
         .collect::<Vec<_>>()
         .join(",")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_and_running_conflict_returns_user_invalid_argument() {
+        let err = ContainerListOptions {
+            all: true,
+            running: true,
+            stopped: false,
+        }
+        .filter()
+        .unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::UserInvalidArgument);
+    }
+
+    #[test]
+    fn all_and_stopped_conflict_returns_user_invalid_argument() {
+        let err = ContainerListOptions {
+            all: true,
+            running: false,
+            stopped: true,
+        }
+        .filter()
+        .unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::UserInvalidArgument);
+    }
+
+    #[test]
+    fn running_and_stopped_conflict_returns_user_invalid_argument() {
+        let err = ContainerListOptions {
+            all: false,
+            running: true,
+            stopped: true,
+        }
+        .filter()
+        .unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::UserInvalidArgument);
+    }
 }

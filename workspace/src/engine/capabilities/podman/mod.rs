@@ -11,7 +11,8 @@ use crate::engine::{
     constants::CADMAN_USER_NAME,
     models::{
         containers::{
-            ContainerListReport, ContainerPort, ContainerRuntimeContext, ContainerSummary,
+            ContainerListReport, ContainerPort, ContainerRuntimeContext, ContainerScope,
+            ContainerSummary,
         },
         runtime::{RunMode, Runtime},
     },
@@ -42,41 +43,56 @@ pub async fn list_containers(
     filter: ContainerListFilter,
 ) -> Result<ContainerListReport> {
     let requested_mode = runtime.run_mode();
-    let effective_mode = runtime.effective_run_mode();
+    let visible_scopes = runtime.visible_container_scopes();
     if !Process::new("podman").binary_exists() {
         return Err(ErrorCode::PodmanMissing
             .error()
             .with_context("binary", "podman not found in PATH"));
     }
 
-    let client = PodmanCliClient::new(cli_spec_for_mode(effective_mode));
-
-    let response = client.containers_async().await.map_err(|err| {
-        ErrorCode::PodmanCommandFailed
-            .error()
-            .with_context("command", "podman ps --all --format json")
-            .with_context("error", err.to_string())
-    })?;
-
+    let mut seen = BTreeMap::new();
     let mut containers = Vec::new();
-    for item in response.data {
-        let value = value_from_podman_summary(item);
-        let container = container_from_value(&value);
+    for scope in &visible_scopes {
+        let response = list_containers_for_scope(*scope).await?;
 
-        if filter.includes(&container) {
-            containers.push(container);
+        for item in response {
+            let value = value_from_podman_summary(item);
+            let container = container_from_value(*scope, &value);
+
+            if filter.includes(&container) && seen.insert(container_key(&container), ()).is_none() {
+                containers.push(container);
+            }
         }
     }
 
     Ok(ContainerListReport {
         runtime: ContainerRuntimeContext {
+            install_scope: runtime.install_scope().to_string(),
             requested_mode: requested_mode.to_string(),
-            effective_mode: effective_mode.to_string(),
+            effective_mode: runtime.effective_run_mode().to_string(),
             effective_user: runtime.effective_user().to_string(),
+            authorized_scopes: visible_scopes
+                .iter()
+                .map(|scope| scope.to_string())
+                .collect(),
             podman_source: "cli".to_string(),
         },
         containers,
     })
+}
+
+async fn list_containers_for_scope(scope: ContainerScope) -> Result<Vec<PodmanContainerSummary>> {
+    let client = PodmanCliClient::new(cli_spec_for_scope(scope)?);
+
+    let response = client.containers_async().await.map_err(|err| {
+        ErrorCode::PodmanCommandFailed
+            .error()
+            .with_context("command", "podman ps --all --format json")
+            .with_context("scope", scope.as_str())
+            .with_context("error", err.to_string())
+    })?;
+
+    Ok(response.data)
 }
 
 // ── Podman passthrough wrappers ─────────────────────────────────────────────
@@ -91,35 +107,47 @@ pub async fn run(mode: RunMode, args: Vec<String>) -> Result<()> {
     proc.run_async().await?.emit()
 }
 
-fn cli_spec_for_mode(mode: RunMode) -> PodmanCliSpec {
+fn cli_spec_for_scope(scope: ContainerScope) -> Result<PodmanCliSpec> {
     let mut spec = PodmanCliSpec::new();
     let current_uid = unistd::geteuid();
     let cadman_uid = unistd::uid_by_username(CADMAN_USER_NAME);
 
-    match mode {
-        RunMode::Current => {
+    match scope {
+        ContainerScope::Current => {
             if let Some(uid) = cadman_uid.filter(|uid| *uid == current_uid) {
                 spec = spec.uid(uid.as_raw());
             }
         }
-        RunMode::Cadman => {
+        ContainerScope::Cadman => {
             if let Some(uid) = cadman_uid.filter(|uid| *uid == current_uid) {
+                spec = spec.uid(uid.as_raw());
+            } else if let Some(uid) = cadman_uid {
+                spec = spec.sudo();
                 spec = spec.uid(uid.as_raw());
             } else {
-                spec = spec.sudo();
-                if let Some(uid) = cadman_uid {
-                    spec = spec.uid(uid.as_raw());
-                }
+                return Err(ErrorCode::PermissionModeDenied
+                    .error()
+                    .with_context("scope", scope.as_str())
+                    .with_context("reason", "cadman user does not exist"));
             }
         }
-        RunMode::Root => {
+        ContainerScope::Root => {
             if current_uid != Uid::from_raw(0) {
                 spec = spec.sudo();
             }
         }
     }
 
-    spec
+    Ok(spec)
+}
+
+fn container_key(container: &ContainerSummary) -> String {
+    let scope = container.scope.as_str();
+    if !container.id.is_empty() {
+        format!("{scope}:{}", container.id)
+    } else {
+        format!("{scope}:{}", container.name)
+    }
 }
 
 fn value_from_podman_summary(item: PodmanContainerSummary) -> Value {
@@ -149,11 +177,12 @@ fn value_from_podman_summary(item: PodmanContainerSummary) -> Value {
     Value::Object(value)
 }
 
-fn container_from_value(value: &Value) -> ContainerSummary {
+fn container_from_value(scope: ContainerScope, value: &Value) -> ContainerSummary {
     let state = first_string(value, &["state", "State", "status", "Status"])
         .unwrap_or_else(|| "-".to_string());
 
     ContainerSummary {
+        scope,
         id: first_string(value, &["id", "Id", "ID", "container_id"]).unwrap_or_default(),
         name: first_name(value).unwrap_or_default(),
         image: first_string(value, &["image", "Image"]).unwrap_or_default(),

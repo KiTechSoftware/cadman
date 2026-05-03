@@ -1,10 +1,13 @@
 use std::path::{Path, PathBuf};
 
-use crate::engine::constants::{
-    CADMAN_USER_NAME, CONFIG_FILE_NAME, DEFAULT_POLL_INTERVAL_SECS, REGISTRY_FILE_NAME,
-    STATE_FILE_NAME,
-};
 use crate::engine::{Result, constants::paths};
+use crate::engine::{
+    constants::{
+        CADMAN_USER_NAME, CONFIG_FILE_NAME, DEFAULT_POLL_INTERVAL_SECS, REGISTRY_FILE_NAME,
+        STATE_FILE_NAME,
+    },
+    models::containers::ContainerScope,
+};
 use veltrix::os::unistd::{self, Gid, Uid};
 
 pub mod mode;
@@ -87,9 +90,7 @@ impl RuntimeUserInfo {
     }
 
     pub fn in_cadman_group(&self) -> bool {
-        self.cadman_gid.is_some_and(|cadman_gid| {
-            unistd::primary_gid_by_uid(self.current_uid) == Some(cadman_gid)
-        })
+        unistd::user_in_group(self.current_uid, CADMAN_USER_NAME)
     }
 
     pub fn in_admin_group(&self) -> bool {
@@ -109,7 +110,7 @@ impl Runtime {
         let install_scope = detect_install_scope(&current_exe, None);
 
         Self {
-            run_mode: RunMode::Current,
+            run_mode: default_run_mode_for_install_scope(install_scope),
             interactive_mode: InteractiveMode::Interactive,
             install_scope,
             options: RuntimeOptions::new(),
@@ -155,6 +156,18 @@ impl Runtime {
             RunMode::Cadman => select_cadman_run_mode(&self.user_info),
             RunMode::Root => select_root_run_mode(&self.user_info),
         }
+    }
+
+    pub fn visible_container_scopes(&self) -> Vec<ContainerScope> {
+        if self.install_scope == InstallScope::System {
+            authorized_container_scopes(&self.user_info)
+        } else {
+            vec![ContainerScope::Current]
+        }
+    }
+
+    pub fn can_access_container_scope(&self, scope: ContainerScope) -> bool {
+        self.visible_container_scopes().contains(&scope)
     }
 
     pub fn interactive_mode(&self) -> InteractiveMode {
@@ -329,7 +342,7 @@ impl RuntimePaths {
     pub fn new() -> Self {
         Self::new_for_scope(InstallScope::User).unwrap_or_else(|_| Self::user_fallback())
     }
-    
+
     pub fn new_for_scope(scope: InstallScope) -> Result<Self> {
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
 
@@ -417,6 +430,53 @@ fn select_root_run_mode(user_info: &RuntimeUserInfo) -> RunMode {
     }
 }
 
+fn default_run_mode_for_install_scope(scope: InstallScope) -> RunMode {
+    match scope {
+        InstallScope::System => RunMode::Cadman,
+        InstallScope::User | InstallScope::Container => RunMode::Current,
+    }
+}
+
+fn authorized_container_scopes(user_info: &RuntimeUserInfo) -> Vec<ContainerScope> {
+    authorized_container_scopes_from_membership(
+        user_info.is_cadman(),
+        user_info.in_cadman_group(),
+        user_info.in_admin_group(),
+    )
+}
+
+#[cfg(test)]
+fn visible_container_scopes_from_membership(
+    install_scope: InstallScope,
+    is_cadman_user: bool,
+    in_cadman_group: bool,
+    in_admin_group: bool,
+) -> Vec<ContainerScope> {
+    if install_scope == InstallScope::System {
+        authorized_container_scopes_from_membership(is_cadman_user, in_cadman_group, in_admin_group)
+    } else {
+        vec![ContainerScope::Current]
+    }
+}
+
+fn authorized_container_scopes_from_membership(
+    is_cadman_user: bool,
+    in_cadman_group: bool,
+    in_admin_group: bool,
+) -> Vec<ContainerScope> {
+    let mut scopes = vec![ContainerScope::Current];
+
+    if in_cadman_group || is_cadman_user {
+        scopes.push(ContainerScope::Cadman);
+    }
+
+    if in_cadman_group && in_admin_group {
+        scopes.push(ContainerScope::Root);
+    }
+
+    scopes
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -468,6 +528,78 @@ mod tests {
 
         assert_eq!(runtime.install_scope(), InstallScope::User);
         assert!(!runtime.default_config_path().starts_with("/etc/cadman"));
+    }
+
+    #[test]
+    fn non_admin_non_cadman_group_sees_current_containers_only() {
+        assert_eq!(
+            authorized_container_scopes_from_membership(false, false, false),
+            vec![ContainerScope::Current]
+        );
+    }
+
+    #[test]
+    fn cadman_group_sees_current_and_cadman_containers() {
+        assert_eq!(
+            authorized_container_scopes_from_membership(false, true, false),
+            vec![ContainerScope::Current, ContainerScope::Cadman]
+        );
+    }
+
+    #[test]
+    fn admin_without_cadman_group_sees_current_containers_only() {
+        assert_eq!(
+            authorized_container_scopes_from_membership(false, false, true),
+            vec![ContainerScope::Current]
+        );
+    }
+
+    #[test]
+    fn admin_and_cadman_group_sees_current_cadman_and_root_containers() {
+        assert_eq!(
+            authorized_container_scopes_from_membership(false, true, true),
+            vec![
+                ContainerScope::Current,
+                ContainerScope::Cadman,
+                ContainerScope::Root
+            ]
+        );
+    }
+
+    #[test]
+    fn user_install_limits_visibility_to_current_even_with_groups() {
+        assert_eq!(
+            visible_container_scopes_from_membership(InstallScope::User, false, true, true),
+            vec![ContainerScope::Current]
+        );
+    }
+
+    #[test]
+    fn system_install_uses_authorized_visibility_scopes() {
+        assert_eq!(
+            visible_container_scopes_from_membership(InstallScope::System, false, true, true),
+            vec![
+                ContainerScope::Current,
+                ContainerScope::Cadman,
+                ContainerScope::Root
+            ]
+        );
+    }
+
+    #[test]
+    fn system_install_defaults_to_cadman_run_mode() {
+        assert_eq!(
+            default_run_mode_for_install_scope(InstallScope::System),
+            RunMode::Cadman
+        );
+    }
+
+    #[test]
+    fn user_install_defaults_to_current_run_mode() {
+        assert_eq!(
+            default_run_mode_for_install_scope(InstallScope::User),
+            RunMode::Current
+        );
     }
 
     #[test]
