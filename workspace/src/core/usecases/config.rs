@@ -107,6 +107,23 @@ pub async fn render_show(ctx: &Context) -> CoreResult<()> {
             .key_value("Podman CLI fallback", report.config.podman.use_cli_fallback)
             .key_value("Poll interval", report.config.runtime.poll_interval_secs)
             .key_value("Log level", &report.config.logging.level)
+            .key_value(
+                "Discovery roots",
+                format_paths(&report.config.discovery.roots),
+            )
+            .key_value("Discovery max depth", report.config.discovery.max_depth)
+            .key_value(
+                "Discovery follow symlinks",
+                report.config.discovery.follow_symlinks,
+            )
+            .key_value(
+                "Discovery include hidden",
+                report.config.discovery.include_hidden,
+            )
+            .key_value(
+                "Discovery auto register",
+                report.config.discovery.auto_register,
+            )
     };
 
     ctx.ui().print(&output)
@@ -136,6 +153,18 @@ pub async fn render_init(ctx: &Context) -> CoreResult<()> {
 fn structured(ctx: &Context) -> bool {
     ctx.runtime().options().output_format().is_structured()
         || ctx.runtime().options().output_envelope().is_json()
+}
+
+fn format_paths(paths: &[PathBuf]) -> String {
+    if paths.is_empty() {
+        "-".to_string()
+    } else {
+        paths
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect::<Vec<_>>()
+            .join(",")
+    }
 }
 
 #[cfg(test)]
