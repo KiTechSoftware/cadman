@@ -1,4 +1,3 @@
-fn main() {
-    print!("Hello, world!");
+fn main() -> std::process::ExitCode {
+    cadman::cli::run()
 }
-

@@ -1,0 +1,1 @@
+pub const DEFAULT_POLL_INTERVAL_SECS: u64 = 5;
