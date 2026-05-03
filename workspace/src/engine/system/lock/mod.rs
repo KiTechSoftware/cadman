@@ -163,8 +163,8 @@ mod tests {
     use super::*;
 
     fn test_dir(suffix: &str) -> PathBuf {
-        let dir = std::env::temp_dir()
-            .join(format!("cadman_lock_{}_{}", std::process::id(), suffix));
+        let dir =
+            std::env::temp_dir().join(format!("cadman_lock_{}_{}", std::process::id(), suffix));
         fs::create_dir_all(&dir).unwrap();
         dir
     }

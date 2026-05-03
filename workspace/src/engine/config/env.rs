@@ -153,7 +153,11 @@ impl EnvManager {
         // ${VAR:default}
         if let Some((var, default)) = expr.split_once(':') {
             let var = var.trim();
-            return Ok(self.vars.get(var).cloned().unwrap_or_else(|| default.to_string()));
+            return Ok(self
+                .vars
+                .get(var)
+                .cloned()
+                .unwrap_or_else(|| default.to_string()));
         }
 
         // ${VAR}
@@ -201,7 +205,9 @@ mod tests {
     #[test]
     fn test_default_value_not_used_when_set() {
         assert_eq!(
-            mgr(&[("FOO", "actual")]).substitute("${FOO:fallback}").unwrap(),
+            mgr(&[("FOO", "actual")])
+                .substitute("${FOO:fallback}")
+                .unwrap(),
             "actual"
         );
     }
@@ -209,7 +215,9 @@ mod tests {
     #[test]
     fn test_required_var_present() {
         assert_eq!(
-            mgr(&[("FOO", "val")]).substitute("${FOO?must be set}").unwrap(),
+            mgr(&[("FOO", "val")])
+                .substitute("${FOO?must be set}")
+                .unwrap(),
             "val"
         );
     }
@@ -236,8 +244,7 @@ mod tests {
     #[test]
     fn test_env_file_loading() {
         use std::fs;
-        let path = std::env::temp_dir()
-            .join(format!("cadman_env_test_{}.env", std::process::id()));
+        let path = std::env::temp_dir().join(format!("cadman_env_test_{}.env", std::process::id()));
         fs::write(&path, "KEY1=value1\n# comment\n\nKEY2=\"quoted\"\n").unwrap();
 
         let mut m = EnvManager::new();
@@ -251,8 +258,8 @@ mod tests {
     #[test]
     fn test_quoted_env_values() {
         use std::fs;
-        let path = std::env::temp_dir()
-            .join(format!("cadman_env_quotes_{}.env", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("cadman_env_quotes_{}.env", std::process::id()));
         fs::write(&path, "A='single'\nB=\"double\"\n").unwrap();
 
         let mut m = EnvManager::new();

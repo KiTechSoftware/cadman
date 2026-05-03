@@ -57,6 +57,7 @@ async fn async_run() -> ExitCode {
         args::Command::Caddy(args) => cmd::wrappers::caddy::run(&ctx, args).await,
         args::Command::Containers(args) => cmd::containers::run(&ctx, args).await,
         args::Command::Compose(args) => cmd::wrappers::compose::run(&ctx, args).await,
+        args::Command::Init(args) => cmd::init::run(&ctx, args).await,
         args::Command::Podman(args) => cmd::wrappers::podman::run(&ctx, args).await,
     };
 

@@ -87,6 +87,8 @@ pub struct Cli {
 pub enum Command {
     /// List Podman containers visible to Cadman
     Containers(cmd::containers::Args),
+    /// Create a Cadman project configuration
+    Init(cmd::init::Args),
     /// Run Podman Compose through Cadman
     Compose(cmd::wrappers::compose::Args),
     /// Run Podman through Cadman
