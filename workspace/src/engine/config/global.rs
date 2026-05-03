@@ -173,12 +173,12 @@ fn expand_discovery_roots(config: &mut CadmanConfig) -> Result<()> {
         .discovery
         .roots
         .iter()
-        .map(|root| expand_discovery_root(root))
+        .map(|root| expand_discovery_path(root))
         .collect::<Result<Vec<_>>>()?;
     Ok(())
 }
 
-fn expand_discovery_root(root: &std::path::Path) -> Result<PathBuf> {
+pub fn expand_discovery_path(root: &std::path::Path) -> Result<PathBuf> {
     let root = root.to_string_lossy();
     if root == "~" {
         return os_paths::home_dir().map_err(|err| {

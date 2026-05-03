@@ -4,5 +4,6 @@ pub mod containers;
 pub mod doctor;
 pub mod init;
 pub mod registry;
+pub mod scan;
 pub mod status;
 pub mod wrappers;
