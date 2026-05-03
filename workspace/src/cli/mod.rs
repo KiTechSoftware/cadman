@@ -60,6 +60,7 @@ async fn async_run() -> ExitCode {
         args::Command::Compose(args) => cmd::wrappers::compose::run(&ctx, args).await,
         args::Command::Init(args) => cmd::init::run(&ctx, args).await,
         args::Command::Podman(args) => cmd::wrappers::podman::run(&ctx, args).await,
+        args::Command::Registry(args) => cmd::registry::run(&ctx, args).await,
     };
 
     if let Err(err) = result {

@@ -95,6 +95,8 @@ pub enum Command {
     Compose(cmd::wrappers::compose::Args),
     /// Run Podman through Cadman
     Podman(cmd::wrappers::podman::Args),
+    /// Inspect and mutate the Cadman registry
+    Registry(cmd::registry::Args),
     /// Run Caddy through Cadman
     Caddy(cmd::wrappers::caddy::Args),
 }
