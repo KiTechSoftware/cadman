@@ -63,6 +63,7 @@ async fn async_run() -> ExitCode {
         args::Command::Podman(args) => cmd::wrappers::podman::run(&ctx, args).await,
         args::Command::Registry(args) => cmd::registry::run(&ctx, args).await,
         args::Command::Remove(args) => cmd::remove::run(&ctx, args).await,
+        args::Command::Status(args) => cmd::status::run(&ctx, args).await,
     };
 
     if let Err(err) = result {

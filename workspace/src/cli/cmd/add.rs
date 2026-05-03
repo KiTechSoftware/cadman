@@ -17,5 +17,5 @@ pub struct Args {
 }
 
 pub async fn run(ctx: &Context, args: Args) -> CliResult<()> {
-    apps::add(ctx,args.name,args.id).await
+    apps::add(ctx, args.name, args.id).await
 }
