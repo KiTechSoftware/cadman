@@ -77,16 +77,16 @@ pub fn find_binary(binary: &str) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::engine::constants::{CADDY_SERVICE_NAME, PODMAN_SERVICE_NAME};
     #[test]
     fn package_manager_install_args() {
         assert_eq!(
-            PackageManager::Apt.install_args("podman"),
-            vec!["install", "-y", "podman"]
+            PackageManager::Apt.install_args(PODMAN_SERVICE_NAME),
+            vec!["install", "-y", PODMAN_SERVICE_NAME]
         );
         assert_eq!(
-            PackageManager::Pacman.install_args("caddy"),
-            vec!["-S", "--noconfirm", "caddy"]
+            PackageManager::Pacman.install_args(CADDY_SERVICE_NAME),
+            vec!["-S", "--noconfirm", CADDY_SERVICE_NAME]
         );
     }
 }

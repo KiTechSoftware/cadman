@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::engine::{ErrorCode, Result, models::runtime::Runtime, system::fs};
+use crate::engine::{ErrorCode, Result, constants::CADDY_SERVICE_NAME, models::runtime::Runtime, system::fs};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -107,7 +107,7 @@ pub fn path(runtime: &Runtime) -> PathBuf {
 /// Build a `CadmanConfig` with defaults resolved relative to the runtime state dir.
 pub fn default_for(runtime: &Runtime) -> CadmanConfig {
     let mut config = CadmanConfig::default();
-    config.caddy.sites_dir = runtime.state_dir().join("caddy").join("sites");
+    config.caddy.sites_dir = runtime.state_dir().join(CADDY_SERVICE_NAME).join("sites");
     config
 }
 

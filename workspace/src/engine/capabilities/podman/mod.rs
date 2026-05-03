@@ -8,7 +8,7 @@ use veltrix::{
 
 use crate::engine::{
     ErrorCode, Result,
-    constants::CADMAN_USER_NAME,
+    constants::{CADMAN_USER_NAME, PODMAN_SERVICE_NAME},
     models::{
         containers::{
             ContainerListReport, ContainerPort, ContainerRuntimeContext, ContainerScope,
@@ -18,6 +18,8 @@ use crate::engine::{
     },
     system::process::Process,
 };
+
+pub mod labels;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ContainerListFilter {
@@ -44,7 +46,7 @@ pub async fn list_containers(
 ) -> Result<ContainerListReport> {
     let requested_mode = runtime.run_mode();
     let visible_scopes = runtime.visible_container_scopes();
-    if !Process::new("podman").binary_exists() {
+    if !Process::new(PODMAN_SERVICE_NAME).binary_exists() {
         return Err(ErrorCode::PodmanMissing
             .error()
             .with_context("binary", "podman not found in PATH"));
@@ -97,7 +99,7 @@ async fn list_containers_for_scope(scope: ContainerScope) -> Result<Vec<PodmanCo
 
 // ── Podman passthrough wrappers ─────────────────────────────────────────────
 pub async fn run(mode: RunMode, args: Vec<String>) -> Result<()> {
-    let proc = Process::new("podman").set_args(args).set_mode(mode);
+    let proc = Process::new(PODMAN_SERVICE_NAME).set_args(args).set_mode(mode);
 
     if !proc.binary_exists() {
         return Err(ErrorCode::PodmanMissing

@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::engine::constants::{DOCKER_SERVICE_NAME, PODMAN_SERVICE_NAME};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum InstallScope {
@@ -79,7 +81,7 @@ fn container_environment_detected() -> bool {
     Path::new("/.dockerenv").exists()
         || Path::new("/run/.containerenv").exists()
         || std::env::var("CADMAN_CONTAINER").is_ok_and(|value| value == "true")
-        || std::env::var("container").is_ok_and(|value| value == "podman" || value == "docker")
+        || std::env::var("container").is_ok_and(|value| value == PODMAN_SERVICE_NAME || value == DOCKER_SERVICE_NAME)
 }
 
 #[cfg(test)]

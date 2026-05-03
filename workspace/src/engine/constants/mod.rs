@@ -35,3 +35,8 @@ pub const LOG_FILE_NAME: &str = "cadman.log";
 
 pub const CADMAN_USER_NAME: &str = APP_NAME;
 pub const CADMAN_GROUP_NAME: &str = APP_NAME;
+
+// Service Constants
+pub const PODMAN_SERVICE_NAME: &str = "podman";
+pub const CADDY_SERVICE_NAME: &str = "caddy";
+pub const DOCKER_SERVICE_NAME: &str = "docker";

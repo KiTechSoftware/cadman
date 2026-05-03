@@ -35,12 +35,12 @@ pub fn systemd_service_content(binary: &Path, target: InstallTarget) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::engine::constants::PODMAN_SERVICE_NAME;
     #[test]
     fn sudoers_content_only_references_cadman_binary() {
         let content = sudoers_content();
         assert!(content.contains("/usr/local/bin/cadman"));
-        assert!(!content.contains("podman"));
+        assert!(!content.contains(PODMAN_SERVICE_NAME));
         assert!(!content.contains("systemctl"));
         assert!(!content.contains("loginctl"));
     }

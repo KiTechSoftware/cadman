@@ -4,7 +4,7 @@ use veltrix::os::unistd::{self, Uid};
 
 use crate::engine::{
     Result,
-    constants::{CADMAN_GROUP_NAME, CADMAN_USER_NAME, paths},
+    constants::{BIN_NAME, CADDY_SERVICE_NAME, CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME, paths},
     models::runtime::Runtime,
 };
 
@@ -14,9 +14,9 @@ use super::{
 };
 
 pub fn collect_install_facts(runtime: &Runtime) -> Result<InstallFacts> {
-    let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("cadman"));
+    let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from(BIN_NAME));
     let user_bin_dir = paths::user_bin_dir()?;
-    let user_binary_path = user_bin_dir.join("cadman");
+    let user_binary_path = user_bin_dir.join(BIN_NAME);
     let installed_binary_path = installed_binary_path(&user_binary_path);
     let current_uid = unistd::getuid();
     let effective_uid = unistd::geteuid();
@@ -37,8 +37,8 @@ pub fn collect_install_facts(runtime: &Runtime) -> Result<InstallFacts> {
         current_user_in_cadman_group: unistd::user_in_group(current_uid, CADMAN_GROUP_NAME),
         current_user_in_admin_group: unistd::user_in_admin_group(current_uid),
         effective_uid_is_root: effective_uid == Uid::from_raw(0),
-        podman_installed: binary_exists("podman"),
-        caddy_installed: binary_exists("caddy"),
+        podman_installed: binary_exists(PODMAN_SERVICE_NAME),
+        caddy_installed: binary_exists(CADDY_SERVICE_NAME),
         cadman_group_exists: unistd::gid_by_groupname(CADMAN_GROUP_NAME).is_some(),
         cadman_user_exists: unistd::uid_by_username(CADMAN_USER_NAME).is_some(),
         systemd_available: Path::new("/etc/systemd/system").exists(),

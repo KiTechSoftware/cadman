@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::engine::{
     ErrorCode, Result,
-    constants::{CADMAN_GROUP_NAME, CADMAN_USER_NAME, paths},
+    constants::{BIN_NAME, CADDY_SERVICE_NAME, CADMAN_GROUP_NAME, CADMAN_USER_NAME, PODMAN_SERVICE_NAME, paths},
     models::runtime::RunMode,
 };
 
@@ -83,10 +83,10 @@ fn add_dependency_steps(
 fn missing_dependencies(facts: &InstallFacts) -> Vec<&'static str> {
     let mut packages = Vec::new();
     if !facts.podman_installed {
-        packages.push("podman");
+        packages.push(PODMAN_SERVICE_NAME);
     }
     if !facts.caddy_installed {
-        packages.push("caddy");
+        packages.push(CADDY_SERVICE_NAME);
     }
     packages
 }
@@ -301,6 +301,7 @@ mod tests {
     use super::*;
     use crate::engine::models::runtime::InstallScope;
     use crate::engine::system::install::package::PackageManager;
+    use crate::engine::constants::BIN_NAME;
 
     fn facts(scope: InstallScope) -> InstallFacts {
         InstallFacts {
@@ -343,7 +344,7 @@ mod tests {
         assert!(
             plan.steps
                 .iter()
-                .any(|step| matches!(step.action, InstallAction::InstallBinary { ref destination, .. } if destination.file_name().is_some_and(|name| name == "cadman")))
+                .any(|step| matches!(step.action, InstallAction::InstallBinary { ref destination, .. } if destination.file_name().is_some_and(|name| name == BIN_NAME)))
         );
     }
 
