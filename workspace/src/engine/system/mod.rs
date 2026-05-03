@@ -1,4 +1,5 @@
 pub mod fs;
+pub mod install;
 pub mod lock;
 pub mod process;
 pub mod terminal;
