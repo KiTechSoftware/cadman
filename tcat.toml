@@ -1,0 +1,12 @@
+
+[scripts.sh]
+extensions = ["sh"]
+
+[scripts.docs]
+extensions = ["md"]
+
+[scripts.rust]
+extensions = ["rs"]
+
+[scripts.configs]
+extensions = ["toml", "yml", "yaml", "json"]

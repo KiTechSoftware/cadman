@@ -1,1 +1,6 @@
-/target
+wip/
+target/
+docs/references/ 
+cadman_v0.1.0.txt
+old_poc.txt
+new_poc.txt

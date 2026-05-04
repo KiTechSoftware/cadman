@@ -1,0 +1,1 @@
+pub type CliResult<T> = Result<T, crate::engine::Error>;

@@ -1,0 +1,22 @@
+[package]
+name = "cadman"
+version = "0.1.0"
+edition = "2024"
+readme = "../README.md"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+scriba = { version = "0.5", features = ["full"] }
+veltrix = { version = "0.7.1", features = ["full"] }
+thiserror = "1"
+toml = "0.8"
+termsize = "0.1"
+serde_yaml = "0.9"
+
+[[bin]]
+name = "cadman"
+path = "src/main.rs"

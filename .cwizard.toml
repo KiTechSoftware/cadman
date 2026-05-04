@@ -1,0 +1,65 @@
+[commit]
+subject_max_length = 72
+use_emojis = true
+
+# Breaking change settings apply only to commits marked as breaking changes
+[commit.breaking]
+require_header = true      # Require ! suffix in type(scope) for breaking changes
+require_footer = true     # Don't require BREAKING CHANGE footer (optional for breaking commits)
+footer_key = "BREAKING CHANGE"
+footer_keys = ["BREAKING CHANGE"]
+emoji = "💥"
+
+[commit.protected]
+allow = true
+force = false
+warn = true
+
+[commit.ticket]
+required = false
+source = "disabled"
+
+[branch]
+remote = "origin"
+protected = [
+    "main",
+    "develop",
+    "release/*",
+    "hotfix/*",
+    "sync/*",
+]
+
+[branch.naming]
+pattern = "feature/{issue}"
+
+[pr]
+enabled = true
+
+[check]
+require_conventional = false
+
+[check.commits]
+enabled = true
+enforce_on = "protected_branches"
+
+[push.allow]
+protected = false
+force = false
+
+[push.check]
+commits = true
+branch_policy = true
+
+[versioning]
+tag_prefix = "v"
+
+# Test registry for verifying resolution works
+[registry]
+use = "cw"
+section = "angular"
+
+# Public registry for testing with multiple sections
+[registries.cw]
+url = "https://github.com/KiTechSoftware/commit-wizard-registry"
+"ref" = "v0.1.0"
+"sections" = ["angular", "gitmoji", "minimal"]
