@@ -111,8 +111,7 @@ fn try_acquire(path: &Path) -> std::result::Result<(), AcquireError> {
 
     match result {
         Ok(mut file) => {
-            let pid = std::process::id();
-            let _ = write!(file, "{pid}");
+            write_lock_pid(&mut file, path)?;
             Ok(())
         }
         Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
@@ -126,9 +125,10 @@ fn try_acquire(path: &Path) -> std::result::Result<(), AcquireError> {
                         .create_new(true)
                         .mode(0o600)
                         .open(path);
+
                     match result2 {
                         Ok(mut file) => {
-                            let _ = write!(file, "{}", std::process::id());
+                            write_lock_pid(&mut file, path)?;
                             Ok(())
                         }
                         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
@@ -156,6 +156,22 @@ fn read_lock_pid(path: &Path) -> Option<u32> {
 /// Check if a PID corresponds to a live process using `kill(pid, 0)`.
 fn pid_is_alive(pid: u32) -> bool {
     unistd::pid_is_alive(Pid::from_raw(pid as i32))
+}
+
+fn write_lock_pid(file: &mut fs::File, path: &Path) -> std::result::Result<(), AcquireError> {
+    let pid = std::process::id();
+
+    write!(file, "{pid}").map_err(|err| {
+        let _ = fs::remove_file(path);
+        AcquireError::Io(format!("failed to write lock pid: {err}"))
+    })?;
+
+    file.sync_all().map_err(|err| {
+        let _ = fs::remove_file(path);
+        AcquireError::Io(format!("failed to sync lock pid: {err}"))
+    })?;
+
+    Ok(())
 }
 
 #[cfg(test)]

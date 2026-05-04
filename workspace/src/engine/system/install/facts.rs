@@ -1,4 +1,6 @@
+use std::fs::{self, OpenOptions};
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use veltrix::os::unistd::{self, Uid};
 
@@ -73,26 +75,63 @@ fn container_system_paths_writable(effective_uid: Uid) -> bool {
         paths::system_log_dir(),
     ]
     .iter()
-    .all(|path| path_group_writable_or_creatable(path))
+    .all(|path| path_writable_or_creatable(path))
 }
 
-fn path_group_writable_or_creatable(path: &Path) -> bool {
-    let Some(existing) = nearest_existing(path) else {
+fn path_writable_or_creatable(path: &Path) -> bool {
+    if path.exists() {
+        return path_is_writable(path);
+    }
+
+    let Some(existing_parent) = nearest_existing_parent(path) else {
         return false;
     };
 
-    std::fs::metadata(existing)
-        .map(|metadata| !metadata.permissions().readonly())
-        .unwrap_or(false)
+    can_create_in_dir(existing_parent)
 }
 
-fn nearest_existing(path: &Path) -> Option<&Path> {
-    let mut candidate = Some(path);
+fn path_is_writable(path: &Path) -> bool {
+    if path.is_dir() {
+        can_create_in_dir(path)
+    } else {
+        OpenOptions::new().append(true).open(path).is_ok()
+    }
+}
+
+fn can_create_in_dir(dir: &Path) -> bool {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or_default();
+
+    let probe_path = dir.join(format!(
+        ".cadman-write-probe-{}-{unique}",
+        std::process::id()
+    ));
+
+    match OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe_path)
+    {
+        Ok(_) => {
+            let _ = fs::remove_file(&probe_path);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+fn nearest_existing_parent(path: &Path) -> Option<&Path> {
+    let mut candidate = path.parent();
+
     while let Some(path) = candidate {
         if path.exists() {
             return Some(path);
         }
+
         candidate = path.parent();
     }
+
     None
 }
