@@ -50,7 +50,7 @@ jobs:
           components: rustfmt
 
       - name: Run rustfmt
-        run: cargo fmt --manifest-path workspace/Cargo.toml --workspace --all-features -- --check
+        run: cargo fmt --all -- --check
 
   clippy:
     name: Lint with Clippy
@@ -65,7 +65,7 @@ jobs:
           components: clippy
 
       - name: Run Clippy
-        run: cargo clippy --manifest-path workspace/Cargo.toml --workspace --all-features -- -D warnings
+        run: cargo clippy --all-features -- -D warnings
 
   test:
     name: Run Tests
@@ -79,4 +79,4 @@ jobs:
           toolchain: stable
 
       - name: Run Tests
-        run: cargo test --manifest-path workspace/Cargo.toml --workspace --all-features
+        run: cargo test --all-features
