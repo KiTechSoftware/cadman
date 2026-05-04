@@ -4,11 +4,17 @@ on:
   workflow_dispatch:
   workflow_call:
 
+# Minimal permissions for CI jobs (read-only workspace contents)
+permissions:
+  contents: read
+
 
 # Define a common setup step for reuse
 defaults:
   run:
     shell: bash
+    # Run commands from the workspace subdirectory where the Cargo workspace lives
+    working-directory: workspace
 
 jobs:
   setup:
