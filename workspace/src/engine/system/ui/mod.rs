@@ -161,7 +161,7 @@ impl Default for Ui {
 }
 
 fn map_scriba_error_to_cadman_error(err: scriba::Error) -> Error {
-    // we should covert the scriba error into a cadman error, but for now we just wrap it
+    // we should convert the scriba error into a cadman error, but for now we just wrap it
     ErrorCode::IoFailure
         .error()
         .with_context("error", err.to_string())

@@ -10,6 +10,11 @@ on:
         required: false
         default: 'cadman'
         type: string
+
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   build:
     name: Build CLI

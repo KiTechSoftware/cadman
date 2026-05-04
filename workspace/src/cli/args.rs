@@ -124,7 +124,7 @@ pub struct GlobalArgs {
     /// Decrease verbosity (-q, -qq)
     #[arg(short = 'q', long = "quiet", action = ArgAction::Count, global = true)]
     pub quiet: u8,
-    /// Output Envelop as JSON instead of human-readable text
+    /// Output Envelope as JSON instead of human-readable text
     #[arg(long, global = true)]
     pub json: bool,
     /// Output Payload format (json, jsonl, markdown, text)

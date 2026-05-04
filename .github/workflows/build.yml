@@ -197,7 +197,7 @@ jobs:
         run: |
           BIN_NAME=$(cargo read-manifest | jq -r .targets[] | jq 'select(.kind[] == "bin") | .name' | head -n1 | tr -d '"')
           echo "Detected binary: $BIN_NAME"
-          cp target/${{ matrix.target }}/release/$BIN_NAME $BINARY_TAG-${{ matrix.name }}
+          cp workspace/target/${{ matrix.target }}/release/$BIN_NAME $BINARY_TAG-${{ matrix.name }}
 
       - if: ${{ matrix.enabled }}
         uses: actions/upload-artifact@v4
@@ -243,15 +243,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.binary_tag }}-${{ matrix.name }}
-          path: target/${{ matrix.target }}/release/
+          path: workspace/target/${{ matrix.target }}/release/
 
       - if: ${{ matrix.enabled }}
         env:
           BINARY_TAG: ${{ inputs.binary_tag }}
         run: |
-          cp target/${{ matrix.target }}/release/$BINARY_TAG-${{ matrix.name }} target/${{ matrix.target }}/release/$BINARY_TAG
+          cp workspace/target/${{ matrix.target }}/release/$BINARY_TAG-${{ matrix.name }} workspace/target/${{ matrix.target }}/release/$BINARY_TAG
           cargo deb --no-build --target ${{ matrix.target }}
-          mv target/${{ matrix.target }}/debian/*.deb $BINARY_TAG-${{ matrix.name }}.deb
+          mv workspace/target/${{ matrix.target }}/debian/*.deb $BINARY_TAG-${{ matrix.name }}.deb
 
 
       - if: ${{ matrix.enabled }}
@@ -298,16 +298,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.binary_tag }}-${{ matrix.name }}
-          path: target/${{ matrix.target }}/release/
+          path: workspace/target/${{ matrix.target }}/release/
 
       - if: ${{ matrix.enabled }}
         env:
           BINARY_TAG: ${{ inputs.binary_tag }}
         run: |
-          cp target/${{ matrix.target }}/release/$BINARY_TAG-${{ matrix.name }} target/${{ matrix.target }}/release/$BINARY_TAG
-          mkdir -p target/${{ matrix.target }}/rpm/
-          cargo generate-rpm --target ${{ matrix.target }} --output target/${{ matrix.target }}/rpm/
-          mv target/${{ matrix.target }}/rpm/*.rpm $BINARY_TAG-${{ matrix.name }}.rpm
+          cp workspace/target/${{ matrix.target }}/release/$BINARY_TAG-${{ matrix.name }} workspace/target/${{ matrix.target }}/release/$BINARY_TAG
+          mkdir -p workspace/target/${{ matrix.target }}/rpm/
+          cargo generate-rpm --target ${{ matrix.target }} --output workspace/target/${{ matrix.target }}/rpm/
+          mv workspace/target/${{ matrix.target }}/rpm/*.rpm $BINARY_TAG-${{ matrix.name }}.rpm
 
 
       - if: ${{ matrix.enabled }}
