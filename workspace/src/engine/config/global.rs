@@ -9,6 +9,7 @@ use crate::engine::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct CadmanConfig {
     pub caddy: CaddyConfig,
     pub podman: PodmanConfig,
@@ -62,18 +63,6 @@ pub struct DiscoveryConfig {
     pub follow_symlinks: bool,
     pub include_hidden: bool,
     pub auto_register: bool,
-}
-
-impl Default for CadmanConfig {
-    fn default() -> Self {
-        Self {
-            caddy: CaddyConfig::default(),
-            podman: PodmanConfig::default(),
-            runtime: RuntimeConfig::default(),
-            logging: LoggingConfig::default(),
-            discovery: DiscoveryConfig::default(),
-        }
-    }
 }
 
 impl Default for CaddyConfig {
@@ -215,14 +204,13 @@ pub fn expand_discovery_path(root: &std::path::Path) -> Result<PathBuf> {
 mod tests {
     use super::*;
     use std::fs as std_fs;
-    use std::sync::Mutex;
 
     use crate::engine::{
         constants::CONFIG_FILE_NAME,
         models::runtime::{InstallScope, Runtime},
     };
 
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
 
     struct EnvGuard {
         home: Option<std::ffi::OsString>,
@@ -338,7 +326,7 @@ auto_register = true
 
     #[test]
     fn tilde_discovery_roots_expand_to_home() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let dir = test_dir("tilde");
         let home = dir.join("home");
         let _home_guard = EnvGuard::set_home(&home);

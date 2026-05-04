@@ -2,35 +2,44 @@
 
 Cadman is a Linux-only, Podman-first, Caddy-first workflow tool.
 
-Build the development binary:
+## Prerequisites
+
+- A Linux host with Podman installed and usable by the Cadman user.
+- Caddy installed for site validation and reloads.
+
+## Install
+
+Install a packaged Cadman binary for your distribution, or download the prebuilt release from the project's release page. If you are a developer, see the developer docs for build instructions.
+
+## Common user workflows
+
+- Initialize a project in a repository (creates cadman.toml):
 
 ```sh
-cd workspace
-cargo build
+cadman init
 ```
 
-Check the environment:
+- Register the current project with the Cadman registry:
 
 ```sh
-cargo run -- --dry-run self install
-cargo run -- self healthcheck
-cargo run -- doctor
+cadman add
+cadman registry list
 ```
 
-Create and register a project:
+- Run a dry-run reconcile to see planned changes without mutating anything:
 
 ```sh
-cargo run -- init
-cargo run -- add
-cargo run -- registry list
+cadman reconcile --dry-run
 ```
 
-Reconcile routes:
+- Apply reconcile to generate site files and (if valid) request a Caddy reload:
 
 ```sh
-cargo run -- --dry-run reconcile
-cargo run -- reconcile
-cargo run -- status
+cadman reconcile
 ```
 
-For the full v0.1.0 command contract, see `docs/CLI_CONTRACT.md`.
+- Inspect runtime status:
+
+```sh
+cadman status
+```

@@ -126,7 +126,7 @@ fn render_add(ctx: &Context, report: &AddReport) -> CoreResult<()> {
     let output = ctx
         .ui()
         .new_output_content()
-        .json(&report)
+        .json(report)
         .title("Added Cadman app")
         .key_value("ID", &report.id)
         .key_value("Name", &report.name)
@@ -143,7 +143,7 @@ fn render_remove(ctx: &Context, report: &RemoveReport) -> CoreResult<()> {
     let output = ctx
         .ui()
         .new_output_content()
-        .json(&report)
+        .json(report)
         .title("Removed Cadman app")
         .key_value("ID", &report.id)
         .key_value("Name", &report.name)
@@ -163,7 +163,6 @@ fn desired_status_string(status: DesiredStatus) -> String {
 mod tests {
     use super::*;
     use std::fs as std_fs;
-    use std::sync::Mutex;
 
     use crate::engine::{
         config::{ProjectConfigFormat, write_default_project_config},
@@ -171,7 +170,7 @@ mod tests {
         registry,
     };
 
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
 
     fn test_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("cadman_apps_{}_{}", std::process::id(), name));
@@ -219,7 +218,7 @@ mod tests {
 
     #[test]
     fn add_app_registers_project_config() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let dir = test_dir("add");
         let registry_dir = test_dir("add_registry");
         write_default_project_config(&dir, ProjectConfigFormat::Toml, false).unwrap();
@@ -250,7 +249,7 @@ mod tests {
 
     #[test]
     fn add_app_honors_name_and_id_overrides() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let dir = test_dir("overrides");
         let registry_dir = test_dir("overrides_registry");
         write_default_project_config(&dir, ProjectConfigFormat::Toml, false).unwrap();
@@ -274,7 +273,7 @@ mod tests {
 
     #[test]
     fn add_app_rejects_duplicate_id() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let dir = test_dir("duplicate");
         let registry_dir = test_dir("duplicate_registry");
         write_default_project_config(&dir, ProjectConfigFormat::Toml, false).unwrap();
@@ -305,7 +304,7 @@ mod tests {
 
     #[test]
     fn remove_app_deletes_registry_entry() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let dir = test_dir("remove");
         let registry_dir = test_dir("remove_registry");
         write_default_project_config(&dir, ProjectConfigFormat::Toml, false).unwrap();
@@ -335,7 +334,7 @@ mod tests {
 
     #[test]
     fn remove_missing_app_returns_registry_app_not_found() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let dir = test_dir("missing");
         let registry_dir = test_dir("missing_registry");
         let (_env_guard, ctx) = guarded_ctx_for(dir.clone(), &registry_dir);

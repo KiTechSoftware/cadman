@@ -220,7 +220,6 @@ fn format_paths(paths: &[PathBuf]) -> String {
 mod tests {
     use super::*;
     use std::fs as std_fs;
-    use std::sync::Mutex;
 
     use crate::engine::{
         config::{ProjectConfigFormat, write_default_project_config},
@@ -228,7 +227,7 @@ mod tests {
         registry,
     };
 
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
 
     struct EnvGuard {
         xdg_state_home: Option<std::ffi::OsString>,
@@ -274,7 +273,7 @@ mod tests {
 
     #[test]
     fn scan_add_registers_discovered_projects() {
-        let _lock = ENV_LOCK.lock().unwrap();
+        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let root = test_dir("add");
         let state_home = test_dir("add_state");
         let app = root.join("web");
@@ -305,7 +304,7 @@ mod tests {
 
     #[test]
     fn scan_add_does_not_duplicate_apps() {
-        let _lock = ENV_LOCK.lock().unwrap();
+        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let root = test_dir("dupe");
         let state_home = test_dir("dupe_state");
         let app = root.join("web");

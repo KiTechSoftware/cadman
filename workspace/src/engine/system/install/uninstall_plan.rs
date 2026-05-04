@@ -52,16 +52,16 @@ pub fn build_uninstall_plan(facts: InstallFacts) -> Result<InstallPlan> {
             steps.push(remove_file(paths::systemd_unit_path(), RunMode::Root));
             steps.push(remove_file(paths::sudoers_file_path(), RunMode::Root));
 
-            if facts.current_user_in_cadman_group {
-                if let Some(user) = &facts.current_user {
-                    steps.push(InstallStep::new(
-                        "remove current user from cadman group",
-                        InstallAction::RemoveUserFromGroup {
-                            user: user.clone(),
-                            group: CADMAN_GROUP_NAME.to_string(),
-                        },
-                    ));
-                }
+            if facts.current_user_in_cadman_group
+                && let Some(user) = &facts.current_user
+            {
+                steps.push(InstallStep::new(
+                    "remove current user from cadman group",
+                    InstallAction::RemoveUserFromGroup {
+                        user: user.clone(),
+                        group: CADMAN_GROUP_NAME.to_string(),
+                    },
+                ));
             }
 
             steps.push(remove_file(installed.clone(), RunMode::Root));

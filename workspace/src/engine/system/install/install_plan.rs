@@ -157,16 +157,16 @@ fn add_system_install_steps(steps: &mut Vec<InstallStep>, facts: &InstallFacts) 
         RunMode::Root,
     ));
 
-    if !facts.current_user_in_cadman_group {
-        if let Some(user) = &facts.current_user {
-            steps.push(InstallStep::new(
-                "add current user to cadman group",
-                InstallAction::AddUserToGroup {
-                    user: user.clone(),
-                    group: CADMAN_GROUP_NAME.to_string(),
-                },
-            ));
-        }
+    if !facts.current_user_in_cadman_group
+        && let Some(user) = &facts.current_user
+    {
+        steps.push(InstallStep::new(
+            "add current user to cadman group",
+            InstallAction::AddUserToGroup {
+                user: user.clone(),
+                group: CADMAN_GROUP_NAME.to_string(),
+            },
+        ));
     }
 
     steps.push(InstallStep::new(

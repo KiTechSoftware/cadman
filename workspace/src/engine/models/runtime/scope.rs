@@ -6,16 +6,12 @@ use crate::engine::constants::{DOCKER_SERVICE_NAME, PODMAN_SERVICE_NAME};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[derive(Default)]
 pub enum InstallScope {
+    #[default]
     User,
     System,
     Container,
-}
-
-impl Default for InstallScope {
-    fn default() -> Self {
-        Self::User
-    }
 }
 
 impl InstallScope {

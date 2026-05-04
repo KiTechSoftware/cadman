@@ -281,7 +281,7 @@ fn timestamp() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::BTreeMap, fs as std_fs, sync::Mutex};
+    use std::{collections::BTreeMap, fs as std_fs};
 
     use crate::engine::{
         capabilities::{
@@ -296,7 +296,7 @@ mod tests {
         registry::DesiredStatus,
     };
 
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
 
     struct EnvGuard {
         xdg_state_home: Option<std::ffi::OsString>,
@@ -383,7 +383,7 @@ mod tests {
 
     #[test]
     fn state_records_project_config_app() {
-        let _lock = ENV_LOCK.lock().unwrap();
+        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let root = test_dir("project");
         let state_home = test_dir("project_state");
         let (_guard, runtime) = runtime(&state_home);
@@ -428,7 +428,7 @@ mod tests {
 
     #[test]
     fn state_records_label_sourced_app() {
-        let _lock = ENV_LOCK.lock().unwrap();
+        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let root = test_dir("label");
         let state_home = test_dir("label_state");
         let (_guard, runtime) = runtime(&state_home);

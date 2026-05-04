@@ -40,13 +40,13 @@ pub fn init_project(ctx: &Context, request: InitRequest) -> CoreResult<InitRepor
     };
 
     fs::create_dir_all(&target_dir)?;
-    if !ctx.force() {
-        if let Some(existing) = detect_project_config(&target_dir)? {
-            return Err(ErrorCode::ConfigAlreadyExists
-                .error()
-                .with_context("path", existing.display().to_string())
-                .with_context("hint", "use --force to overwrite"));
-        }
+    if !ctx.force()
+        && let Some(existing) = detect_project_config(&target_dir)?
+    {
+        return Err(ErrorCode::ConfigAlreadyExists
+            .error()
+            .with_context("path", existing.display().to_string())
+            .with_context("hint", "use --force to overwrite"));
     }
 
     let target_path = target_dir.join(format.file_name());

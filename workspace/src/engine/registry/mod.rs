@@ -38,7 +38,9 @@ pub struct RegistryApp {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[derive(Default)]
 pub enum RegistrySource {
+    #[default]
     ProjectConfig,
     PodmanLabels,
 }
@@ -48,12 +50,6 @@ pub enum RegistrySource {
 pub enum DesiredStatus {
     Up,
     Down,
-}
-
-impl Default for RegistrySource {
-    fn default() -> Self {
-        Self::ProjectConfig
-    }
 }
 
 impl Default for Registry {
@@ -201,11 +197,12 @@ pub fn sanitize_app_id(value: &str) -> String {
         if ch.is_ascii_alphanumeric() || ch == '_' {
             sanitized.push(ch);
             previous_dash = false;
-        } else if ch == '-' || ch.is_ascii_whitespace() || ch == '.' || ch == '/' {
-            if !previous_dash && !sanitized.is_empty() {
-                sanitized.push('-');
-                previous_dash = true;
-            }
+        } else if (ch == '-' || ch.is_ascii_whitespace() || ch == '.' || ch == '/')
+            && !previous_dash
+            && !sanitized.is_empty()
+        {
+            sanitized.push('-');
+            previous_dash = true;
         }
     }
 

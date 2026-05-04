@@ -13,6 +13,7 @@ use crate::engine::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct ProjectConfig {
     pub project: ProjectSection,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -25,6 +26,7 @@ pub struct ProjectConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct ProjectSection {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -35,6 +37,7 @@ pub struct ProjectSection {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct ProjectContainer {
     pub image: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -82,42 +85,6 @@ impl ProjectConfigFormat {
         match self {
             Self::Toml => PROJECT_CONFIG_FILE_NAME,
             Self::Yaml => PROJECT_CONFIG_FILE_NAME_YAML,
-        }
-    }
-}
-
-impl Default for ProjectConfig {
-    fn default() -> Self {
-        Self {
-            project: ProjectSection::default(),
-            containers: BTreeMap::new(),
-            routes: BTreeMap::new(),
-            metadata: BTreeMap::new(),
-        }
-    }
-}
-
-impl Default for ProjectSection {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            environment: None,
-            description: None,
-        }
-    }
-}
-
-impl Default for ProjectContainer {
-    fn default() -> Self {
-        Self {
-            image: String::new(),
-            name: None,
-            ports: Vec::new(),
-            volumes: Vec::new(),
-            environment: BTreeMap::new(),
-            env_file: Vec::new(),
-            restart: None,
-            command: None,
         }
     }
 }
@@ -360,13 +327,11 @@ pub fn write_default_project_config(
     format: ProjectConfigFormat,
     force: bool,
 ) -> Result<PathBuf> {
-    if !force {
-        if let Some(existing) = detect_project_config(dir)? {
-            return Err(ErrorCode::ConfigAlreadyExists
-                .error()
-                .with_context("path", existing.display().to_string())
-                .with_context("hint", "use --force to overwrite"));
-        }
+    if !force && let Some(existing) = detect_project_config(dir)? {
+        return Err(ErrorCode::ConfigAlreadyExists
+            .error()
+            .with_context("path", existing.display().to_string())
+            .with_context("hint", "use --force to overwrite"));
     }
 
     let project_name = dir

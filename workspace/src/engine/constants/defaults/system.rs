@@ -1,4 +1,4 @@
-pub const SYSTEM_UNIT_NAME: &'static str = "cadman.service";
+pub const SYSTEM_UNIT_NAME: &str = "cadman.service";
 pub const SYSTEM_SERVICE: &str = r#"[Unit]
 Description=Cadman daemon
 After=network.target podman.socket caddy.service
