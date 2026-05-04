@@ -23,8 +23,8 @@ jobs:
       binary_tag: ${{ github.event.release.tag_name || inputs.binary_tag }}
       build_linux_x86_64: true
       build_linux_aarch64: true
-      build_macos_x86_64: true
-      build_macos_aarch64: true
+      build_macos_x86_64: false
+      build_macos_aarch64: false
       package_deb: false
       package_rpm: false
       package_homebrew: false
