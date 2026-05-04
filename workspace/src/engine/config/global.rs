@@ -210,8 +210,6 @@ mod tests {
         models::runtime::{InstallScope, Runtime},
     };
 
-
-
     struct EnvGuard {
         home: Option<std::ffi::OsString>,
     }
@@ -326,7 +324,9 @@ auto_register = true
 
     #[test]
     fn tilde_discovery_roots_expand_to_home() {
-        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _guard = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let dir = test_dir("tilde");
         let home = dir.join("home");
         let _home_guard = EnvGuard::set_home(&home);

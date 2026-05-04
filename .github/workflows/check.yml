@@ -8,11 +8,6 @@ on:
 permissions:
   contents: read
 
-# Default environment variables for jobs
-env:
-  rust_src_dir: workspace
-
-
 # Define a common setup step for reuse
 defaults:
   run:
@@ -36,7 +31,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
+            workspace/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -72,6 +67,7 @@ jobs:
         with:
           toolchain: stable
           components: clippy
+          cache-workspaces: workspace
 
       - name: Install system dependencies
         run: |

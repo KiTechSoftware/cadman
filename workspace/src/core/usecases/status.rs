@@ -300,8 +300,6 @@ mod tests {
         registry::{Registry, RegistryApp},
     };
 
-
-
     struct EnvGuard {
         xdg_state_home: Option<std::ffi::OsString>,
     }
@@ -359,7 +357,9 @@ mod tests {
 
     #[tokio::test]
     async fn status_works_with_empty_registry_and_state() {
-        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let state_home = test_dir("empty");
         let (_guard, ctx) = ctx_for(&state_home);
 
@@ -374,7 +374,9 @@ mod tests {
 
     #[tokio::test]
     async fn status_filters_app_by_id_or_name() {
-        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let state_home = test_dir("filter");
         let (_guard, ctx) = ctx_for(&state_home);
         let mut registry = Registry::empty();
@@ -391,7 +393,9 @@ mod tests {
 
     #[tokio::test]
     async fn status_missing_app_returns_registry_app_not_found() {
-        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let state_home = test_dir("missing");
         let (_guard, ctx) = ctx_for(&state_home);
 

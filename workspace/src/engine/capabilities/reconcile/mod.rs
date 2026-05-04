@@ -296,8 +296,6 @@ mod tests {
         registry::DesiredStatus,
     };
 
-
-
     struct EnvGuard {
         xdg_state_home: Option<std::ffi::OsString>,
     }
@@ -383,7 +381,9 @@ mod tests {
 
     #[test]
     fn state_records_project_config_app() {
-        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let root = test_dir("project");
         let state_home = test_dir("project_state");
         let (_guard, runtime) = runtime(&state_home);
@@ -428,7 +428,9 @@ mod tests {
 
     #[test]
     fn state_records_label_sourced_app() {
-        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let root = test_dir("label");
         let state_home = test_dir("label_state");
         let (_guard, runtime) = runtime(&state_home);

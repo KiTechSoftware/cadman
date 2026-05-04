@@ -227,8 +227,6 @@ mod tests {
         registry,
     };
 
-
-
     struct EnvGuard {
         xdg_state_home: Option<std::ffi::OsString>,
     }
@@ -273,7 +271,9 @@ mod tests {
 
     #[test]
     fn scan_add_registers_discovered_projects() {
-        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let root = test_dir("add");
         let state_home = test_dir("add_state");
         let app = root.join("web");
@@ -304,7 +304,9 @@ mod tests {
 
     #[test]
     fn scan_add_does_not_duplicate_apps() {
-        let _lock = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = crate::TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let root = test_dir("dupe");
         let state_home = test_dir("dupe_state");
         let app = root.join("web");
