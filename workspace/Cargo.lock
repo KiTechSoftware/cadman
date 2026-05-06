@@ -156,7 +156,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "termsize",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "tokio",
  "toml",
  "veltrix",
