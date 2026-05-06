@@ -9,7 +9,7 @@ on:
     inputs:
       work_dir:
         description: 'Working directory for cargo commands'
-        default: '.'
+        default: './workspace'
         type: string
       binary_tag:
         description: 'Base name for output binaries and packages'
