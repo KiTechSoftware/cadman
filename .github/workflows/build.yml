@@ -254,6 +254,12 @@ jobs:
         if: ${{ matrix.enabled && matrix.target == 'aarch64-unknown-linux-gnu' }}
         run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
+      - name: Install system dependencies
+        if: ${{ matrix.enabled }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libkrb5-dev
+          
       - if: ${{ matrix.enabled }}
         uses: actions/download-artifact@v4
         with:
@@ -311,6 +317,12 @@ jobs:
       - name: Install cross-linker for aarch64 Linux
         if: ${{ matrix.enabled && matrix.target == 'aarch64-unknown-linux-gnu' }}
         run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+      
+      - name: Install system dependencies
+        if: ${{ matrix.enabled }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libkrb5-dev
 
       - if: ${{ matrix.enabled }}
         uses: actions/download-artifact@v4
