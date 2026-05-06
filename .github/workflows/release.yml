@@ -20,6 +20,7 @@ jobs:
     name: Build CLI
     uses: ./.github/workflows/build.yml
     with:
+      work_dir: "./workspace"
       binary_tag: ${{ github.event.release.tag_name || inputs.binary_tag }}
       build_linux_x86_64: true
       build_linux_aarch64: true
