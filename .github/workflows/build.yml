@@ -194,6 +194,12 @@ jobs:
         if: ${{ matrix.enabled && matrix.target == 'aarch64-unknown-linux-gnu' }}
         run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
+      - name: Install system dependencies
+        if: ${{ matrix.enabled && matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libkrb5-dev
+          
       - if: ${{ matrix.enabled }}
         name: Build release binary
         working-directory: ${{ inputs.work_dir }}
