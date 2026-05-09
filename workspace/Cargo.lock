@@ -2153,9 +2153,9 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "veltrix"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a4817b1d816d1cc9c6274780a6d631e84b9cb801641baa51dcc1b07ea865e9e"
+checksum = "f87389b874d263f1616edd7cc9e3e1e02c5bdf6f6fbba7c33e15b7a76f7c4b9a"
 dependencies = [
  "ldap3",
  "libc",
